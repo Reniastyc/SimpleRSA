@@ -1,0 +1,241 @@
+object RSATest: TRSATest
+  Left = 0
+  Top = 0
+  Caption = 'RSA'#28204#35430
+  ClientHeight = 600
+  ClientWidth = 900
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnClose = FormClose
+  DesignerMasterStyle = 0
+  object Back: TScaledLayout
+    Align = Client
+    OriginalWidth = 900.000000000000000000
+    OriginalHeight = 600.000000000000000000
+    Size.Width = 900.000000000000000000
+    Size.Height = 600.000000000000000000
+    Size.PlatformDefault = False
+    object Button1: TButton
+      Position.X = 5.000000000000000000
+      Position.Y = 5.000000000000000000
+      Size.Width = 75.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      Text = #38543#26426#32032#25968
+      OnClick = Button1Click
+    end
+    object Button2: TButton
+      Position.X = 5.000000000000000000
+      Position.Y = 40.000000000000000000
+      Size.Width = 75.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Text = #38543#26426#32032#25968
+      OnClick = Button2Click
+    end
+    object Button3: TButton
+      Position.X = 5.000000000000000000
+      Position.Y = 90.000000000000000000
+      Size.Width = 75.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      Text = #20844#38053#36215#28857
+      OnClick = Button3Click
+    end
+    object Button4: TButton
+      Position.X = 410.000000000000000000
+      Position.Y = 130.000000000000000000
+      Size.Width = 80.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 3
+      Text = #35745#31639#21442#25968
+      OnClick = Button4Click
+    end
+    object Button5: TButton
+      Position.X = 370.000000000000000000
+      Position.Y = 280.000000000000000000
+      Size.Width = 80.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 4
+      Text = #20844#38053#21152#23494
+      OnClick = Button5Click
+    end
+    object Button6: TButton
+      Position.X = 470.000000000000000000
+      Position.Y = 280.000000000000000000
+      Size.Width = 80.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 5
+      Text = #31169#38053#35299#23494
+      OnClick = Button6Click
+    end
+    object EditD: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 6
+      ReadOnly = True
+      Position.X = 90.000000000000000000
+      Position.Y = 240.000000000000000000
+      Size.Width = 805.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object EditE: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 7
+      ReadOnly = True
+      Position.X = 90.000000000000000000
+      Position.Y = 210.000000000000000000
+      Size.Width = 805.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object EditE0: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 8
+      Position.X = 170.000000000000000000
+      Position.Y = 90.000000000000000000
+      Size.Width = 725.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object EditN: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 9
+      ReadOnly = True
+      Position.X = 90.000000000000000000
+      Position.Y = 170.000000000000000000
+      Size.Width = 805.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object EditP1: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 10
+      ReadOnly = True
+      Position.X = 170.000000000000000000
+      Position.Y = 5.000000000000000000
+      Size.Width = 725.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object EditP2: TEdit
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 11
+      ReadOnly = True
+      Position.X = 170.000000000000000000
+      Position.Y = 40.000000000000000000
+      Size.Width = 725.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object Label1: TLabel
+      Position.X = 5.000000000000000000
+      Position.Y = 170.000000000000000000
+      Size.Width = 75.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.HorzAlign = Center
+      Text = #27169#25968
+      TabOrder = 12
+    end
+    object Label2: TLabel
+      Position.X = 5.000000000000000000
+      Position.Y = 210.000000000000000000
+      Size.Width = 75.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.HorzAlign = Center
+      Text = #20844#38053
+      TabOrder = 13
+    end
+    object Label3: TLabel
+      Position.X = 5.000000000000000000
+      Position.Y = 240.000000000000000000
+      Size.Width = 75.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.HorzAlign = Center
+      Text = #31169#38053
+      TabOrder = 15
+    end
+    object Memo1: TMemo
+      Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+      DataDetectorTypes = []
+      TextSettings.WordWrap = True
+      Position.X = 5.000000000000000000
+      Position.Y = 320.000000000000000000
+      Size.Width = 890.000000000000000000
+      Size.Height = 275.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 16
+      Viewport.Width = 886.000000000000000000
+      Viewport.Height = 271.000000000000000000
+    end
+    object NumberBox1: TNumberBox
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 17
+      Cursor = crIBeam
+      Min = 16.000000000000000000
+      Max = 512.000000000000000000
+      Value = 128.000000000000000000
+      TextSettings.HorzAlign = Center
+      Position.X = 90.000000000000000000
+      Position.Y = 5.000000000000000000
+      HorzIncrement = 0.000000000000000000
+      VertIncrement = 0.000000000000000000
+      Size.Width = 70.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object NumberBox2: TNumberBox
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 18
+      Cursor = crIBeam
+      Min = 16.000000000000000000
+      Max = 512.000000000000000000
+      Value = 128.000000000000000000
+      TextSettings.HorzAlign = Center
+      Position.X = 90.000000000000000000
+      Position.Y = 40.000000000000000000
+      HorzIncrement = 0.000000000000000000
+      VertIncrement = 0.000000000000000000
+      Size.Width = 70.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object NumberBox3: TNumberBox
+      Touch.InteractiveGestures = [LongTap, DoubleTap]
+      TabOrder = 19
+      Cursor = crIBeam
+      Min = 16.000000000000000000
+      Max = 64.000000000000000000
+      Value = 16.000000000000000000
+      TextSettings.HorzAlign = Center
+      Position.X = 90.000000000000000000
+      Position.Y = 90.000000000000000000
+      HorzIncrement = 0.000000000000000000
+      VertIncrement = 0.000000000000000000
+      Size.Width = 70.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+    end
+    object Label4: TLabel
+      Position.X = 90.000000000000000000
+      Position.Y = 280.000000000000000000
+      Size.Width = 120.000000000000000000
+      Size.Height = 25.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.HorzAlign = Center
+      Text = #27169#20301#25968#65306#12300'0'#12301
+      TabOrder = 14
+    end
+  end
+end
