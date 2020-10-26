@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, System.Generics.Collections,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.StdCtrls, FMX.Controls.Presentation, FMX.Edit,
   FMX.Memo, FMX.EditBox, FMX.NumberBox,
-  RdeEM.Long, RdeEM.Prime, FMX.ScrollBox, FMX.Layouts;
+  RdeEM.Long, RdeEM.Prime, FMX.ScrollBox, FMX.Layouts, FMX.Memo.Types;
 
 type
   TRSATest = class(TForm)
@@ -33,10 +33,7 @@ type
     Label4: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
-    procedure Button1Click(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
-    procedure Button3Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
     procedure Button6Click(Sender: TObject);
   private
@@ -53,26 +50,6 @@ var
 implementation
 
 {$R *.fmx}
-
-procedure TRSATest.Button1Click(Sender: TObject);
-begin
-  FreeAndNil(Prime1);
-  Prime1 := GetRandomPrimeNumber(Trunc(NumberBox1.Value), PrimeL);
-  EditP1.Text := Prime1.ToString16;
-end;
-
-procedure TRSATest.Button2Click(Sender: TObject);
-begin
-  FreeAndNil(Prime2);
-  Prime2 := GetRandomPrimeNumber(Trunc(NumberBox2.Value), PrimeL);
-  EditP2.Text := Prime2.ToString16;
-end;
-
-procedure TRSATest.Button3Click(Sender: TObject);
-begin
-  RSAE0.FromRandomOdd(Trunc(NumberBox3.Value));
-  EditE0.Text := RSAE0.ToString16;
-end;
 
 procedure TRSATest.Button4Click(Sender: TObject);
 begin
@@ -151,7 +128,7 @@ begin
   RSAD := TLongInteger.Create;
   RSAN := TLongInteger.Create;
   RSATE := TLongInteger.Create;
-  PrimeL := PrimeNumbersGenerate(25);
+  PrimeL := PrimeNumbersGenerate(32);
 end;
 
 end.

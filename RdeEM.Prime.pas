@@ -98,6 +98,7 @@ begin
         begin
           Number.Add(ST2);
         end;
+        S := not S;
         Continue;
       end;
     until IsPrime;

@@ -25,7 +25,6 @@ object RSATest: TRSATest
       Size.PlatformDefault = False
       TabOrder = 0
       Text = #38543#26426#32032#25968
-      OnClick = Button1Click
     end
     object Button2: TButton
       Position.X = 5.000000000000000000
@@ -35,7 +34,6 @@ object RSATest: TRSATest
       Size.PlatformDefault = False
       TabOrder = 1
       Text = #38543#26426#32032#25968
-      OnClick = Button2Click
     end
     object Button3: TButton
       Position.X = 5.000000000000000000
@@ -45,7 +43,6 @@ object RSATest: TRSATest
       Size.PlatformDefault = False
       TabOrder = 2
       Text = #20844#38053#36215#28857
-      OnClick = Button3Click
     end
     object Button4: TButton
       Position.X = 410.000000000000000000

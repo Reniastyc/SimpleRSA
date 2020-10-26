@@ -25,6 +25,44 @@ type
   EPowerError = class(Exception);
 
   TLongInteger = class;
+  TLongReal = class;
+
+  THexInt = record
+  private
+    FHex: string;
+    function GetHexValue: string;
+    function GetBinValue: string;
+    function GetDecValue: string;
+    procedure SetHexValue(const Value: string);
+    procedure SetBinValue(const Value: string);
+    procedure SetDecValue(const Value: string);
+  public
+    class function Create(const Str: string): THexInt; static;
+    // 正負運算
+    class operator Positive(const Hex1: THexInt): THexInt;
+    class operator Negative(const Hex1: THexInt): THexInt;
+    // 比較運算
+    class operator Equal(const Hex1, Hex2: THexInt): Boolean;
+    class operator LessThan(const Hex1, Hex2: THexInt): Boolean;
+    class operator GreaterThan(const Hex1, Hex2: THexInt): Boolean;
+    class operator NotEqual(const Hex1, Hex2: THexInt): Boolean;
+    class operator LessThanOrEqual(const Hex1, Hex2: THexInt): Boolean;
+    class operator GreaterThanOrEqual(const Hex1, Hex2: THexInt): Boolean;
+    // 四則運算
+    class operator Add(const Hex1, Hex2: THexInt): THexInt;
+    class operator Subtract(const Hex1, Hex2: THexInt): THexInt;
+    class operator Multiply(const Hex1, Hex2: THexInt): THexInt;
+    class operator Divide(const Hex1, Hex2: THexInt): THexInt;
+    class operator IntDivide(const Hex1, Hex2: THexInt): THexInt;
+    class operator Modulus(const Hex1, Hex2: THexInt): THexInt;
+    // 其他功能
+    function Power(Hex1: THexInt): THexInt;
+    function PowerMod(Hex1, Hex2: THexInt): THexInt;
+    // 屬性
+    property BinValue: string          read GetBinValue         write SetBinValue;
+    property DecValue: string          read GetDecValue         write SetDecValue;
+    property HexValue: string          read GetHexValue         write SetHexValue;
+  end;
 
   TLongInteger = class
   private
@@ -33,15 +71,20 @@ type
     function SameSignAdd(Par: TLongInteger): TLongInteger;
     function SameSignSub(Par: TLongInteger): TLongInteger;
     function MultiplyOri(Par: TLongInteger): TLongInteger;
+    function Mut10PowN(N: TLongInteger): TLongInteger;
+    function Div10PowN(N: TLongInteger): TLongInteger;
+    function Normalize: TLongInteger;
   public
     constructor Create; overload;
     constructor Create(LI: TLongInteger); overload;
     constructor Create(N: Int64); overload;
     destructor Destroy; override;
+    // 複製
+    function CopyVal(Par: TLongInteger): TLongInteger;
     // 判斷
     function Equal(Par: TLongInteger): Boolean;
-    function GreaterThan(Par: TLongInteger): Boolean;
     function LessThan(Par: TLongInteger): Boolean;
+    function GreaterThan(Par: TLongInteger): Boolean;
     function IsZero: Boolean;
     function IsEven: Boolean;
     function IsOdd: Boolean;
@@ -63,12 +106,9 @@ type
     function FromRandom(Digits: Integer): TLongInteger;
     function FromRandomOdd(Digits: Integer): TLongInteger;
     function FromRandomEven(Digits: Integer): TLongInteger;
-    // 複製
-    function CopyVal(Par: TLongInteger): TLongInteger;
     // 歸零、絕對值、正負
     function Zero: TLongInteger;
     function AbsoluteVal: TLongInteger;
-    function Normalize: TLongInteger;
     function Positive: TLongInteger;
     function Negative: TLongInteger;
     // 運算
@@ -93,41 +133,39 @@ type
     function GetNumber(Index: Integer): Boolean;
   end;
 
-  THexInt = record
+  TLongReal = class // 用科學記數法記錄實數，Val = FCoe * Power(10, FExp)
   private
-    FHex: string;
-    function GetHexValue: string;
-    function GetBinValue: string;
-    function GetDecValue: string;
-    procedure SetHexValue(const Value: string);
-    procedure SetBinValue(const Value: string);
-    procedure SetDecValue(const Value: string);
+    FCoe: TLongInteger; // 係數
+    FExp: TLongInteger; // 指數
+    function Normalize: TLongReal;
   public
-    class function Create(const Str: string): THexInt; static;
-    // 正負運算
-    class operator Positive(const Hex1: THexInt): THexInt;
-    class operator Negative(const Hex1: THexInt): THexInt; 
-    // 比較運算
-    class operator Equal(const Hex1, Hex2: THexInt): Boolean;
-    class operator LessThan(const Hex1, Hex2: THexInt): Boolean;
-    class operator GreaterThan(const Hex1, Hex2: THexInt): Boolean;
-    class operator NotEqual(const Hex1, Hex2: THexInt): Boolean;
-    class operator LessThanOrEqual(const Hex1, Hex2: THexInt): Boolean;
-    class operator GreaterThanOrEqual(const Hex1, Hex2: THexInt): Boolean;
+    constructor Create; overload;
+    constructor Create(LR: TLongReal); overload;
+    constructor Create(Coe: TLongInteger); overload;
+    constructor Create(Coe, Exp: TLongInteger); overload;
+    destructor Destroy; override;
+    // 複製
+    function CopyVal(Par: TLongReal): TLongReal;
+    // 判斷
+    function Equal(Par: TLongReal; Digit: Integer = -5): Boolean;
+    function LessThan(Par: TLongReal; Digit: Integer = -5): Boolean;
+    function GreaterThan(Par: TLongReal; Digit: Integer = -5): Boolean;
+      // Digit代表判定精度，如果兩數之差在該量級範圍內，則判定爲相等。
+      // 如Digit取-5時，則相差絕對值在Power(10, -5)內都視爲相等。
+    // 歸零、絕對值、正負
+    function Zero: TLongReal;
+    function AbsoluteVal: TLongReal;
+    function Positive: TLongReal;
+    function Negative: TLongReal;
     // 四則運算
-    class operator Add(const Hex1, Hex2: THexInt): THexInt;
-    class operator Subtract(const Hex1, Hex2: THexInt): THexInt;
-    class operator Multiply(const Hex1, Hex2: THexInt): THexInt;
-    class operator Divide(const Hex1, Hex2: THexInt): THexInt;
-    class operator IntDivide(const Hex1, Hex2: THexInt): THexInt;
-    class operator Modulus(const Hex1, Hex2: THexInt): THexInt;
-    // 其他功能
-    function Power(Hex1: THexInt): THexInt;
-    function PowerMod(Hex1, Hex2: THexInt): THexInt;
-    // 屬性
-    property BinValue: string          read GetBinValue         write SetBinValue;
-    property DecValue: string          read GetDecValue         write SetDecValue;
-    property HexValue: string          read GetHexValue         write SetHexValue;
+    function Add(Par: TLongReal): TLongReal;
+    function Subtract(Par: TLongReal): TLongReal;
+    function Multiply(Par: TLongReal): TLongReal;
+    function Divide(Par: TLongReal; Digit: Cardinal = 5): TLongReal;
+      // Digit代表額外的位數。取0則相當於對兩數的係數部份做整數除法，取x則相當於保留x位小數
+    // 轉換（尚未完成）
+    function ToStringOri: string;
+    function FromStringOri(Str: string): Boolean;
   end;
 
   function GetHexChr(N: Byte): Char;
@@ -326,6 +364,20 @@ end;
 function TLongInteger.Digit: Integer;
 begin
   Exit(FNumL.Count);
+end;
+
+function TLongInteger.Div10PowN(N: TLongInteger): TLongInteger;
+var
+  M: TLongInteger;
+begin
+  M := TLongInteger.Create(10);
+  try
+    M.Power(N);
+    Divide(M);
+  finally
+    FreeAndNil(M);
+  end;
+  Exit(Self);
 end;
 
 function TLongInteger.DivAndMod(Par: TLongInteger; var ModVal: TLongInteger): TLongInteger;
@@ -1285,12 +1337,24 @@ begin
         CLI.FNumL.Add(False);
       end;
     end;
-    XLI.CopyVal(ALI).MultiplyOri(CLI);
-    YLI.CopyVal(BLI).MultiplyOri(DLI);
-    ZLI.CopyVal(ALI.Subtract(BLI)).MultiplyOri(DLI.Subtract(CLI));
-    ZLI.Add(XLI).Add(YLI);
-    CopyVal(YLI);
-    Add(ZLI.ShiftL(n)).Add(XLI.ShiftL(2 * n));
+    if ALI.FNumL.Count > 64 then
+    begin
+      XLI.CopyVal(ALI).Multiply(CLI);
+      YLI.CopyVal(BLI).Multiply(DLI);
+      ZLI.CopyVal(ALI.Subtract(BLI)).Multiply(DLI.Subtract(CLI));
+      ZLI.Add(XLI).Add(YLI);
+      CopyVal(YLI);
+      Add(ZLI.ShiftL(n)).Add(XLI.ShiftL(2 * n));
+    end
+    else
+    begin
+      XLI.CopyVal(ALI).MultiplyOri(CLI);
+      YLI.CopyVal(BLI).MultiplyOri(DLI);
+      ZLI.CopyVal(ALI.Subtract(BLI)).MultiplyOri(DLI.Subtract(CLI));
+      ZLI.Add(XLI).Add(YLI);
+      CopyVal(YLI);
+      Add(ZLI.ShiftL(n)).Add(XLI.ShiftL(2 * n));
+    end;
   finally
     FreeAndNil(ALI);
     FreeAndNil(BLI);
@@ -1343,6 +1407,20 @@ begin
   end;       
   FSymb := S;
   Normalize;
+  Exit(Self);
+end;
+
+function TLongInteger.Mut10PowN(N: TLongInteger): TLongInteger;
+var
+  M: TLongInteger;
+begin
+  M := TLongInteger.Create(10);
+  try
+    M.Power(N);
+    Multiply(M);
+  finally
+    FreeAndNil(M);
+  end;
   Exit(Self);
 end;
 
@@ -1713,7 +1791,7 @@ var
 begin
   if FNumL.Count = 0 then
   begin
-    Exit('');
+    Exit('0');
   end;
   s := '';
   F := FSymb;
@@ -1746,7 +1824,7 @@ var
 begin
   if FNumL.Count = 0 then
   begin
-    Exit('');
+    Exit('0');
   end;
   s := '';
   for i := 0 to (FNumL.Count - 1) div 4 do
@@ -1784,7 +1862,7 @@ var
 begin
   if FNumL.Count = 0 then
   begin
-    Exit('');
+    Exit('0');
   end;
   if not FSymb then
   begin
@@ -2156,6 +2234,318 @@ begin
     FreeAndNil(LI1);
     FreeAndNil(LI2);
   end;
+end;
+
+{ TLongReal }
+
+function TLongReal.AbsoluteVal: TLongReal;
+begin
+  FCoe.AbsoluteVal;
+  Exit(Self);
+end;
+
+function TLongReal.Add(Par: TLongReal): TLongReal;
+var
+  N: TLongInteger;
+  R: TLongReal;
+begin
+  R := TLongReal.Create;
+  N := TLongInteger.Create;
+  try
+    N.CopyVal(Par.FExp).Subtract(FExp).AbsoluteVal;
+    if R.FExp.GreaterThan(FExp) then
+    begin
+      R.CopyVal(Par);
+      FCoe.Add(R.FCoe.Mut10PowN(N));
+    end
+    else
+    begin
+      FExp.CopyVal(Par.FExp);
+      FCoe.Mut10PowN(N).Add(Par.FCoe);
+    end;
+    Normalize;
+  finally
+    FreeAndNil(R);
+    FreeAndNil(N);
+  end;
+  Exit(Self);
+end;
+
+function TLongReal.CopyVal(Par: TLongReal): TLongReal;
+begin
+  FCoe.CopyVal(Par.FCoe);
+  FExp.CopyVal(Par.FExp);
+  Exit(Self);
+end;
+
+constructor TLongReal.Create;
+begin
+  inherited;
+  FCoe := TLongInteger.Create;
+  FExp := TLongInteger.Create;
+end;
+
+constructor TLongReal.Create(LR: TLongReal);
+begin
+  inherited Create;
+  FCoe := TLongInteger.Create;
+  FExp := TLongInteger.Create;
+  FCoe.CopyVal(LR.FCoe);
+  FExp.CopyVal(LR.FExp);
+end;
+
+constructor TLongReal.Create(Coe: TLongInteger);
+begin
+  inherited Create;
+  FCoe := TLongInteger.Create;
+  FExp := TLongInteger.Create;
+  FCoe.CopyVal(Coe);
+end;
+
+constructor TLongReal.Create(Coe, Exp: TLongInteger);
+begin
+  inherited Create;
+  FCoe := TLongInteger.Create;
+  FExp := TLongInteger.Create;
+  FCoe.CopyVal(Coe);
+  FExp.CopyVal(Exp);
+end;
+
+destructor TLongReal.Destroy;
+begin
+  FreeAndNil(FCoe);
+  FreeAndNil(FExp);
+  inherited;
+end;
+
+function TLongReal.Divide(Par: TLongReal; Digit: Cardinal): TLongReal;
+var
+  N: TLongInteger;
+begin
+  N := TLongInteger.Create(Digit);
+  try
+    FCoe.Mut10PowN(N).Divide(Par.FCoe);
+    FExp.Subtract(N).Subtract(Par.FExp);
+  finally
+    FreeAndNil(N);
+  end;
+  Normalize;
+  Exit(Self);
+end;
+
+function TLongReal.Equal(Par: TLongReal; Digit: Integer): Boolean;
+var
+  R: TLongReal;
+  N: TLongInteger;
+begin
+  R := TLongReal.Create(Self);
+  N := TLongInteger.Create(Digit);
+  try
+    R.Subtract(Par).AbsoluteVal;
+    if R.FCoe.IsZero then
+    begin
+      Exit(True);
+    end;
+    R.FExp.Subtract(N).Normalize;
+    if R.FExp.FSymb and not R.FExp.IsZero then
+    begin
+      Exit(False);
+    end;
+    R.FCoe.Div10PowN(R.FExp.AbsoluteVal);
+    if R.FCoe.IsZero then
+    begin
+      Exit(True);
+    end
+    else
+    begin
+      Exit(False);
+    end;
+  finally
+    FreeAndNil(R);
+    FreeAndNil(N);
+  end;
+  Exit(False);
+end;
+
+function TLongReal.FromStringOri(Str: string): Boolean;
+var
+  SS: TArray<string>;
+begin
+  SS := Str.Split(['e', 'E']);
+  if FCoe.FromString10(SS[0]) and FExp.FromString10(SS[1]) then
+  begin
+    Exit(True);
+  end
+  else
+  begin
+    Zero;
+    Exit(False);
+  end;
+end;
+
+function TLongReal.GreaterThan(Par: TLongReal; Digit: Integer): Boolean;
+var
+  R: TLongReal;
+  N: TLongInteger;
+begin
+  R := TLongReal.Create(Self);
+  N := TLongInteger.Create(Digit);
+  try
+    R.Subtract(Par);
+    if not R.FCoe.FSymb then
+    begin
+      Exit(False);
+    end;
+    if R.FCoe.IsZero then
+    begin
+      Exit(False);
+    end;
+    R.FExp.Subtract(N).Normalize;
+    if R.FExp.FSymb and not R.FExp.IsZero then
+    begin
+      Exit(True);
+    end;
+    R.FCoe.Div10PowN(R.FExp.AbsoluteVal);
+    if R.FCoe.IsZero then
+    begin
+      Exit(False);
+    end
+    else
+    begin
+      Exit(True);
+    end;
+  finally
+    FreeAndNil(R);
+    FreeAndNil(N);
+  end;
+  Exit(False);
+end;
+
+function TLongReal.LessThan(Par: TLongReal; Digit: Integer): Boolean;
+var
+  R: TLongReal;
+  N: TLongInteger;
+begin
+  R := TLongReal.Create(Self);
+  N := TLongInteger.Create(Digit);
+  try
+    R.Subtract(Par);
+    if R.FCoe.FSymb then
+    begin
+      Exit(False);
+    end;
+    if R.FCoe.IsZero then
+    begin
+      Exit(False);
+    end;
+    R.FExp.Subtract(N).Normalize;
+    R.FCoe.AbsoluteVal;
+    if R.FExp.FSymb and not R.FExp.IsZero then
+    begin
+      Exit(True);
+    end;
+    R.FCoe.Div10PowN(R.FExp.AbsoluteVal);
+    if R.FCoe.IsZero then
+    begin
+      Exit(False);
+    end
+    else
+    begin
+      Exit(True);
+    end;
+  finally
+    FreeAndNil(R);
+    FreeAndNil(N);
+  end;
+  Exit(False);
+end;
+
+function TLongReal.Multiply(Par: TLongReal): TLongReal;
+begin
+  FCoe.Multiply(Par.FCoe);
+  FExp.Add(Par.FExp);
+  Normalize;
+  Exit(Self);
+end;
+
+function TLongReal.Negative: TLongReal;
+begin
+  FCoe.Negative;
+  Exit(Self);
+end;
+
+function TLongReal.Normalize: TLongReal;
+var
+  S: string;
+  i, n: Integer;
+  T: TLongInteger;
+begin
+  FCoe.Normalize;
+  FExp.Normalize;
+  if FCoe.IsZero then
+  begin
+    FExp.Zero;
+    Exit(Self);
+  end;
+  S := FCoe.ToString10;
+  n := 0;
+  for i := S.Length - 1 to 0 do if S.Chars[i] <> '0' then
+  begin
+    n := S.Length - 1 - i;
+    Break;
+  end;
+  T := TLongInteger.Create(n);
+  try
+    FCoe.Div10PowN(T);
+    FExp.Add(T);
+  finally
+    FreeAndNil(T);
+  end;
+  Exit(Self);
+end;
+
+function TLongReal.Positive: TLongReal;
+begin
+  Exit(Self);
+end;
+
+function TLongReal.Subtract(Par: TLongReal): TLongReal;
+var
+  N: TLongInteger;
+  R: TLongReal;
+begin
+  R := TLongReal.Create;
+  N := TLongInteger.Create;
+  try
+    N.CopyVal(Par.FExp).Subtract(FExp).AbsoluteVal;
+    if R.FExp.GreaterThan(FExp) then
+    begin
+      R.CopyVal(Par);
+      FCoe.Subtract(R.FCoe.Mut10PowN(N));
+    end
+    else
+    begin
+      FExp.CopyVal(Par.FExp);
+      FCoe.Mut10PowN(N).Subtract(Par.FCoe);
+    end;
+    Normalize;
+  finally
+    FreeAndNil(R);
+    FreeAndNil(N);
+  end;
+  Exit(Self);
+end;
+
+function TLongReal.ToStringOri: string;
+begin
+  Exit(Format('%se%s', [FCoe.ToString10, FExp.ToString10]));
+end;
+
+function TLongReal.Zero: TLongReal;
+begin
+  FCoe.Zero;
+  FExp.Zero;
+  Exit(Self);
 end;
 
 end.
