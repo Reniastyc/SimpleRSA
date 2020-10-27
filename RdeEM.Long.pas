@@ -4,7 +4,7 @@
 {                                                       }
 {                    RdeEM Long                         }
 {                     大数单元                          }
-{                     ver 1.10                          }
+{                     ver 1.15                          }
 {                                                       }
 {    Copyright(c) 2018-2019 Reniasty de El Magnifico    }
 {                   天道玄虚 出品                       }
@@ -18,7 +18,7 @@ unit RdeEM.Long;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.UITypes, System.Generics.Collections, System.Math;
+  System.Classes, System.SysUtils, System.UITypes, System.Generics.Collections, System.Math, System.VarCmplx;
 
 type
   EZeroError = class(Exception);
@@ -58,6 +58,7 @@ type
     // 其他功能
     function Power(Hex1: THexInt): THexInt;
     function PowerMod(Hex1, Hex2: THexInt): THexInt;
+    function PowerModFFT(Hex1, Hex2: THexInt): THexInt;
     // 屬性
     property BinValue: string          read GetBinValue         write SetBinValue;
     property DecValue: string          read GetDecValue         write SetDecValue;
@@ -74,6 +75,11 @@ type
     function Mut10PowN(N: TLongInteger): TLongInteger;
     function Div10PowN(N: TLongInteger): TLongInteger;
     function Normalize: TLongInteger;
+    function GetReverseList(ReverseList: TList<Integer>; Bit: Integer): Boolean;
+    function FFT(Complex: TList<Variant>; ReverseList: TList<Integer>; Count: Integer): Boolean;
+      // 未經有效優化，效率低
+    function IFFT(Complex: TList<Variant>; ReverseList: TList<Integer>; Count: Integer): Boolean;
+      // 未經有效優化，效率低
   public
     constructor Create; overload;
     constructor Create(LI: TLongInteger); overload;
@@ -114,11 +120,14 @@ type
     // 運算
     function Add(Par: TLongInteger): TLongInteger;
     function Subtract(Par: TLongInteger): TLongInteger;
-    function Multiply(Par: TLongInteger): TLongInteger;
+    function Multiply(Par: TLongInteger): TLongInteger; // 按位分治乘法
+    function MultiplyFFT(Par: TLongInteger): TLongInteger; // 應用了快速傅立葉變換的乘法
+      // 註：該傅立葉變換未經良好優化，實測表現不如上述按位分治乘法
     function Divide(Par: TLongInteger): TLongInteger;
     function Modulus(Par: TLongInteger): TLongInteger;
     function Power(Par: TLongInteger): TLongInteger;
     function PowerMod(PowPar, ModPar: TLongInteger): TLongInteger;
+    function PowerModFFT(PowPar, ModPar: TLongInteger): TLongInteger; // 將乘法替換爲快速傅立葉變換乘法
     function DivAndMod(Par: TLongInteger; var ModVal: TLongInteger): TLongInteger;
     function DivAndMod10(var ModVal: TLongInteger): TLongInteger;
     function Increase(Step: Cardinal = 1): TLongInteger;
@@ -163,7 +172,7 @@ type
     function Multiply(Par: TLongReal): TLongReal;
     function Divide(Par: TLongReal; Digit: Cardinal = 5): TLongReal;
       // Digit代表額外的位數。取0則相當於對兩數的係數部份做整數除法，取x則相當於保留x位小數
-    // 轉換（尚未完成）
+    // 轉換（僅支持無小數點之科學記數法的轉換）
     function ToStringOri: string;
     function FromStringOri(Str: string): Boolean;
   end;
@@ -635,6 +644,57 @@ begin
   Exit(Self);
 end;
 
+function TLongInteger.FFT(Complex: TList<Variant>; ReverseList: TList<Integer>; Count: Integer): Boolean;
+var
+  i, j, k, step: Integer;
+  v, x, y, wn, wnk: Variant;
+begin
+  if (Complex = nil) or (ReverseList = nil) or (Count < 1) then
+  begin
+    Exit(False);
+  end;
+  Complex.Clear;
+  for i := 0 to FNumL.Count - 1 do
+  begin
+    if FNumL[i] then
+    begin
+      Complex.Add(VarComplexCreate(1));
+    end
+    else
+    begin
+      Complex.Add(VarComplexCreate(0));
+    end;
+  end;
+  Complex.Count := Count;
+  for i := 0 to Count - 1 do if i < ReverseList[i] then
+  begin
+    v := Complex[i];
+    Complex[i] := Complex[ReverseList[i]];
+    Complex[ReverseList[i]] := v;
+  end;
+  step := 1;
+  while step < Count do
+  begin
+    wn := VarComplexExp(VarComplexCreate(0, PI / step));
+    j := 0;
+    while j < Count do
+    begin
+      wnk := VarComplexCreate(1);
+      for k := j to j + step - 1 do
+      begin
+        x := Complex[k];
+        y := wnk * Complex[k + step];
+        Complex[k] := x + y;
+        Complex[k + step] := x - y;
+        wnk := wnk * wn;
+      end;
+      j := j + step shl 1;
+    end;
+    step := step shl 1;
+  end;
+  Exit(True);
+end;
+
 function TLongInteger.FromBytes(B: TBytes): TLongInteger;
 var
   n: Byte;
@@ -1017,6 +1077,23 @@ begin
   Exit(FNumL[Index]);
 end;
 
+function TLongInteger.GetReverseList(ReverseList: TList<Integer>; Bit: Integer): Boolean;
+var
+  i: Integer;
+begin
+  if (Bit > 31) or (ReverseList = nil) then
+  begin
+    Exit(False);
+  end;
+  ReverseList.Clear;
+  ReverseList.Count := 1 shl Bit;
+  for i := 0 to (1 shl Bit) - 1 do
+  begin
+    ReverseList[i] := (ReverseList[i shr 1] shr 1) or ((i and 1) shl (bit - 1));
+  end;
+  Exit(True);
+end;
+
 function TLongInteger.GreaterThan(Par: TLongInteger): Boolean;
 var
   i: Integer;
@@ -1051,6 +1128,61 @@ begin
     end;
   end;
   Exit(False);
+end;
+
+function TLongInteger.IFFT(Complex: TList<Variant>; ReverseList: TList<Integer>; Count: Integer): Boolean;
+var
+  i, j, k, step: Integer;
+  v, x, y, wn, wnk: Variant;
+begin
+  if (Complex = nil) or (ReverseList = nil) or (Complex.Count <> Count) then
+  begin
+    Exit(False);
+  end;
+  for i := 0 to Count - 1 do if i < ReverseList[i] then
+  begin
+    v := Complex[i];
+    Complex[i] := Complex[ReverseList[i]];
+    Complex[ReverseList[i]] := v;
+  end;
+  step := 1;
+  while step < Count do
+  begin
+    wn := VarComplexExp(VarComplexCreate(0, - PI / step));
+    j := 0;
+    while j < Count do
+    begin
+      wnk := VarComplexCreate(1);
+      for k := j to j + step - 1 do
+      begin
+        x := Complex[k];
+        y := wnk * Complex[k + step];
+        Complex[k] := x + y;
+        Complex[k + step] := x - y;
+        wnk := wnk * wn;
+      end;
+      j := j + step shl 1;
+    end;
+    step := step shl 1;
+  end;
+  for i := 0 to Count - 1 do
+  begin
+    Complex[i] := Complex[i] / Count;
+  end;
+  FNumL.Clear;
+  k := 0;
+  for i := 0 to Count - 1 do
+  begin
+    j := Round(Complex[i].Real) + k;
+    FNumL.Add(j and 1 = 1);
+    k := j shr 1;
+  end;
+  while k > 0 do
+  begin
+    FNumL.Add(k and 1 = 1);
+    k := k shr 1;
+  end;
+  Exit(True);
 end;
 
 function TLongInteger.Increase(Step: Cardinal): TLongInteger;
@@ -1239,8 +1371,7 @@ begin
   ALI := TLongInteger.Create;
   try
     S := FSymb;
-    ALI.CopyVal(Par);
-    ALI.FSymb := True;
+    ALI.CopyVal(Par).FSymb := True;
     FSymb := True;
     if LessThan(ALI) then
     begin
@@ -1257,11 +1388,11 @@ begin
       end;
       ALI.ShiftR(1);
     end;
-    Normalize;
-    FSymb := S;
   finally
     FreeAndNil(ALI);
   end;
+  Normalize;
+  FSymb := S;
   Exit(Self);
 end;
 
@@ -1277,6 +1408,10 @@ begin
   begin
     Zero;
     Exit(Self);
+  end;
+  if (FNumL.Count * 2 <= Par.FNumL.Count) or (Par.FNumL.Count * 2 <= FNumL.Count) then
+  begin
+    Exit(MultiplyOri(Par));
   end;
   ALI := TLongInteger.Create;
   BLI := TLongInteger.Create;
@@ -1363,6 +1498,50 @@ begin
     FreeAndNil(XLI);
     FreeAndNil(YLI);
     FreeAndNil(ZLI);
+  end;
+  FSymb := S;
+  Normalize;
+  Exit(Self);
+end;
+
+function TLongInteger.MultiplyFFT(Par: TLongInteger): TLongInteger;
+var
+  Bit, NumLength, i: Integer;
+  RevList: TList<Integer>;
+  ComplexA, ComplexB: TList<Variant>;
+  S: Boolean;
+begin
+  Normalize;
+  Par.Normalize;
+  if IsZero or Par.IsZero then
+  begin
+    Zero;
+    Exit(Self);
+  end;
+  S := not (FSymb xor Par.FSymb);
+  Bit := 1;
+  NumLength := 2;
+  while (1 shl bit) < (FNumL.Count + Par.FNumL.Count - 1) do
+  begin
+    NumLength := NumLength shl 1;
+    Bit := Bit + 1;
+  end;
+  RevList := TList<Integer>.Create;
+  ComplexA := TList<Variant>.Create;
+  ComplexB := TList<Variant>.Create;
+  try
+    GetReverseList(RevList, Bit);
+    FFT(ComplexA, RevList, NumLength);
+    Par.FFT(ComplexB, RevList, NumLength);
+    for i := 0 to ComplexA.Count - 1 do
+    begin
+      ComplexA[i] := ComplexA[i] * ComplexB[i];
+    end;
+    IFFT(ComplexA, RevList, NumLength);
+  finally
+    FreeAndNil(RevList);
+    FreeAndNil(ComplexA);
+    FreeAndNil(ComplexB);
   end;
   FSymb := S;
   Normalize;
@@ -1547,6 +1726,55 @@ begin
   Exit(Self);
 end;
 
+function TLongInteger.PowerModFFT(PowPar, ModPar: TLongInteger): TLongInteger;
+var
+  LIList: TObjectList<TLongInteger>;
+  i: Integer;
+  S: Boolean;
+begin
+  if PowPar.IsZero or not PowPar.FSymb then
+  begin
+    raise EPowerError.Create('Error Message: Power index must be greater than ZERO!');
+  end;
+  if ModPar.IsZero then
+  begin
+    raise EZeroError.Create('Error Message: Cannot divide ZERO!');
+  end;
+  if IsZero then
+  begin
+    Exit(Self);
+  end;
+  if not FSymb and PowPar.FNumL[0] then
+  begin
+    S := True;
+  end
+  else
+  begin
+    S := FSymb;
+  end;
+  FSymb := True;
+  LIList := TObjectList<TLongInteger>.Create;
+  try
+    LIList.Add(TLongInteger.Create(Self));
+    LIList[0].Modulus(ModPar);
+    for i := 0 to PowPar.FNumL.Count - 2 do
+    begin
+      LIList.Add(TLongInteger.Create(LIList[i]).MultiplyFFT(LIList[i]).Modulus(ModPar));
+    end;
+    FNumL.Clear;
+    FNumL.Add(True);
+    for i := 0 to PowPar.FNumL.Count - 1 do if PowPar.FNumL[i] then
+    begin
+      MultiplyFFT(LIList[i]).Modulus(ModPar);
+    end;
+  finally
+    FreeAndNil(LIList);
+  end;
+  Normalize;
+  FSymb := S;
+  Exit(Self);
+end;
+
 function TLongInteger.SameSignAdd(Par: TLongInteger): TLongInteger;
 var
   F, X, Y, P, Q: Boolean;
@@ -1590,7 +1818,6 @@ begin
   Normalize;
   Exit(Self);
 end;
-
 
 function TLongInteger.SameSignSub(Par: TLongInteger): TLongInteger;
 var
@@ -2099,7 +2326,7 @@ begin
   try
     LI1.FromString16(Hex1.FHex);
     LI2.FromString16(Hex2.FHex);
-    Result.FHex := LI1.Multiply(LI2).ToString16;
+    Result.FHex := LI1.MultiplyFFT(LI2).ToString16;
   finally
     FreeAndNil(LI1);
     FreeAndNil(LI2);
@@ -2169,6 +2396,24 @@ begin
     LI2.FromString16(Hex1.FHex);
     LI3.FromString16(Hex2.FHex);
     Result.FHex := LI1.PowerMod(LI2, LI3).ToString16;
+  finally
+    FreeAndNil(LI1);
+    FreeAndNil(LI2);
+  end;
+end;
+
+function THexInt.PowerModFFT(Hex1, Hex2: THexInt): THexInt;
+var
+  LI1, LI2, LI3: TLongInteger;
+begin
+  LI1 := TLongInteger.Create;
+  LI2 := TLongInteger.Create;
+  LI3 := TLongInteger.Create;
+  try
+    LI1.FromString16(FHex);
+    LI2.FromString16(Hex1.FHex);
+    LI3.FromString16(Hex2.FHex);
+    Result.FHex := LI1.PowerModFFT(LI2, LI3).ToString16;
   finally
     FreeAndNil(LI1);
     FreeAndNil(LI2);

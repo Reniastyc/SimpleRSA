@@ -20,7 +20,6 @@ type
     Button3: TButton;
     Edit5: TEdit;
     Button4: TButton;
-    Edit6: TEdit;
     Edit7: TEdit;
     Edit8: TEdit;
     procedure Button1Click(Sender: TObject);
@@ -89,13 +88,14 @@ begin
     end;
   end;
   t2 := TThread.GetTickCount;
-  Memo1.Lines.Add(Format('Time: %d', [t1, t2, t2 - t1]));
+  Memo1.Lines.Add(Format('Time: %d', [t2 - t1]));
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 var
   SL: TStringList;
 begin
+  Memo1.Lines.Clear;
   SL := PrimeNumbersGenerate16(StrToIntDef(Edit4.Text, 0));
   try
     Memo1.Lines.Text := SL.Text;
@@ -108,6 +108,7 @@ procedure TForm1.Button3Click(Sender: TObject);
 var
   LI: TLongInteger;
 begin
+  Memo1.Lines.Clear;
   LI := TLongInteger.Create;
   try
     LI.FromString10(Edit5.Text);
@@ -130,6 +131,7 @@ var
   LI: TLongInteger;
   t1, t2, i: Integer;
 begin
+  Memo1.Lines.Clear;
   t1 := TThread.GetTickCount;
   Count := StrToIntDef(Edit7.Text, 10);
   if Count <= 0 then
@@ -140,13 +142,13 @@ begin
   begin
     LI := GetRandomPrimeNumber(Count, PrimeL);
     try
-      Edit6.Text := LI.ToString10;
+      Memo1.Lines.Add(LI.ToString10);
     finally
       LI.Free;
     end;
   end;
   t2 := TThread.GetTickCount;
-  Memo1.Lines.Add(Format('%d', [t2 - t1]));
+  Memo1.Lines.Add(Format('Time: %d', [t2 - t1]));
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);

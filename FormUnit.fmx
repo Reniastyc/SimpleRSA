@@ -4,6 +4,7 @@ object Form1: TForm1
   Caption = 'Form1'
   ClientHeight = 515
   ClientWidth = 528
+  Position = DesktopCenter
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
@@ -41,7 +42,7 @@ object Form1: TForm1
     Position.X = 16.000000000000000000
     Position.Y = 400.000000000000000000
     TabOrder = 4
-    Text = #22235#21017#36816#31639
+    Text = #36816#31639
     OnClick = Button1Click
   end
   object Memo1: TMemo
@@ -75,13 +76,13 @@ object Form1: TForm1
   object Button3: TButton
     Position.X = 16.000000000000000000
     Position.Y = 440.000000000000000000
-    TabOrder = 11
+    TabOrder = 10
     Text = #32032#24615#26816#39564
     OnClick = Button3Click
   end
   object Edit5: TEdit
     Touch.InteractiveGestures = [LongTap, DoubleTap]
-    TabOrder = 12
+    TabOrder = 11
     Position.X = 104.000000000000000000
     Position.Y = 440.000000000000000000
     Size.Width = 409.000000000000000000
@@ -95,30 +96,23 @@ object Form1: TForm1
     Text = #38543#26426#32032#25968
     OnClick = Button4Click
   end
-  object Edit6: TEdit
-    Touch.InteractiveGestures = [LongTap, DoubleTap]
-    TabOrder = 10
-    Position.X = 184.000000000000000000
-    Position.Y = 472.000000000000000000
-    Size.Width = 289.000000000000000000
-    Size.Height = 22.000000000000000000
-    Size.PlatformDefault = False
-  end
   object Edit7: TEdit
     Touch.InteractiveGestures = [LongTap, DoubleTap]
     TabOrder = 7
+    Text = '128'
     Position.X = 104.000000000000000000
     Position.Y = 472.000000000000000000
-    Size.Width = 73.000000000000000000
+    Size.Width = 217.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
   end
   object Edit8: TEdit
     Touch.InteractiveGestures = [LongTap, DoubleTap]
     TabOrder = 6
-    Position.X = 480.000000000000000000
+    Text = '1'
+    Position.X = 336.000000000000000000
     Position.Y = 472.000000000000000000
-    Size.Width = 33.000000000000000000
+    Size.Width = 177.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
   end
