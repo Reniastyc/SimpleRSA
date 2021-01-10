@@ -4,7 +4,7 @@
 {                                                       }
 {                    RdeEM Prime                        }
 {                     素数单元                          }
-{                     ver 1.15                          }
+{                     ver 1.19                          }
 {                                                       }
 {    Copyright(c) 2018-2019 Reniasty de El Magnifico    }
 {                   天道玄虚 出品                       }
@@ -61,7 +61,7 @@ begin
   LINOne := TLongInteger.Create;
   LIPOne := TLongInteger.Create(1);
   try
-    Number.FromRandomOdd(Digits - 3).Multiply(LI).Increase;
+    Number.FromRandomOdd(Digits - 3).MultiplyFFT(LI).Increase;
     S := False;
     repeat
       IsPrime := False;
@@ -129,8 +129,7 @@ begin
   try
     if Count > 0 then
     begin
-      LI := TLongInteger.Create;
-      SL.Add(LI.FromInteger(2));
+      SL.Add(TLongInteger.Create(2));
     end
     else
     begin
@@ -138,8 +137,7 @@ begin
     end;
     if Count > 1 then
     begin
-      LI := TLongInteger.Create;
-      SL.Add(LI.FromInteger(3));
+      SL.Add(TLongInteger.Create(3));
     end
     else
     begin
@@ -147,8 +145,7 @@ begin
     end;
     if Count > 2 then
     begin
-      LI := TLongInteger.Create;
-      SL.Add(LI.FromInteger(5));
+      SL.Add(TLongInteger.Create(5));
     end
     else
     begin
@@ -156,8 +153,7 @@ begin
     end;
     if Count > 3 then
     begin
-      LI := TLongInteger.Create;
-      SL.Add(LI.FromInteger(7));
+      SL.Add(TLongInteger.Create(7));
     end
     else
     begin
@@ -176,7 +172,7 @@ begin
         begin
           Break;
         end;
-        if LI1.LessThan(LI4.Multiply(LI3)) then
+        if LI1.LessThan(LI4.MultiplyFFT(LI3)) then
         begin
           LI := TLongInteger.Create;
           SL.Add(LI.CopyVal(LI1));
@@ -227,7 +223,7 @@ begin
         begin
           Break;
         end;
-        if LI1.LessThan(LI4.Multiply(LI3)) then
+        if LI1.LessThan(LI4.MultiplyFFT(LI3)) then
         begin
           SL.Add(LI1.ToString10);
           Break;
@@ -277,7 +273,7 @@ begin
         begin
           Break;
         end;
-        if LI1.LessThan(LI4.Multiply(LI3)) then
+        if LI1.LessThan(LI4.MultiplyFFT(LI3)) then
         begin
           SL.Add(LI1.ToString16);
           Break;
@@ -324,7 +320,7 @@ begin
     begin
       LID.ShiftR(1);
     end;
-    LIB.PowerMod(LID, Number);
+    LIB.PowerModFFT(LID, Number);
     if LIB.Equal(LIPOne) or LIB.Equal(LINOne) then
     begin
       Exit(True);
@@ -332,7 +328,7 @@ begin
     else while not LID.Equal(LIT) do
     begin
       LID.ShiftL(1);
-      if LIB.CopyVal(Base).PowerMod(LID, Number).Equal(LINOne) then
+      if LIB.CopyVal(Base).PowerModFFT(LID, Number).Equal(LINOne) then
       begin
         Exit(True);
       end;
@@ -435,7 +431,7 @@ begin
   LIY := LIGCD(LI1, LI2);
   LIX := TLongInteger.Create;
   try
-    LIX.CopyVal(LI1).Multiply(LI2).Divide(LIY);
+    LIX.CopyVal(LI1).MultiplyFFT(LI2).Divide(LIY);
   except
     on EZeroError do
     begin
@@ -533,7 +529,7 @@ begin
   TE := TLongInteger.Create(LX);
   TS := TLongInteger.Create(LA);
   try
-    LY.Subtract(TE.Multiply(TS.Divide(LB)));
+    LY.Subtract(TE.MultiplyFFT(TS.Divide(LB)));
   finally
     FreeAndNil(TE);
     FreeAndNil(TS);
@@ -549,7 +545,7 @@ begin
   LY := TLongInteger.Create;
   try
     GCD := LIEXGCD(LI, MO, LX, LY);
-    if (GCD.Digit = 1) and (GCD.GetNumber(0) = True) then
+    if (GCD.Digit = 1) and (GCD.GetValue(0) = True) then
     begin
       Exit(TLongInteger.Create(LX).Modulus(MO).Add(MO).Modulus(MO));
     end
@@ -571,7 +567,7 @@ begin
   T1 := TLongInteger.Create;
   T2 := TLongInteger.Create;
   try
-    N.CopyVal(P1).Multiply(P2);
+    N.CopyVal(P1).MultiplyFFT(P2);
     T1.CopyVal(P1).Decrease;
     T2.CopyVal(P2).Decrease;
     L := LILCM(T1, T2);

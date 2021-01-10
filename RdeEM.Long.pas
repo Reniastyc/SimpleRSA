@@ -4,7 +4,7 @@
 {                                                       }
 {                    RdeEM Long                         }
 {                     大数单元                          }
-{                     ver 1.15                          }
+{                     ver 1.19                          }
 {                                                       }
 {    Copyright(c) 2018-2019 Reniasty de El Magnifico    }
 {                   天道玄虚 出品                       }
@@ -26,6 +26,26 @@ type
 
   TLongInteger = class;
   TLongReal = class;
+  TBigInteger = class;
+
+  TComplex = record
+  private
+    FM: Double; // Modulus
+    FA: Double; // Argument
+  public
+    class function Create(const Modulus, Argument: Double): TComplex; static;
+    class operator Multiply(const C1, C2: TComplex): TComplex; overload;
+    class operator Multiply(const C1: TComplex; const C2: Double): TComplex; overload;
+    class operator Divide(const C1, C2: TComplex): TComplex; overload;
+    class operator Divide(const C1: TComplex; const C2: Double): TComplex; overload;
+    class operator Add(const C1, C2: TComplex): TComplex;
+    class operator Subtract(const C1, C2: TComplex): TComplex;
+    function Modulus: Double;
+    function Argument: Double;
+    function Real: Double;
+    function Imaginary: Double;
+    function Conjugate: TComplex;
+  end;
 
   THexInt = record
   private
@@ -56,9 +76,9 @@ type
     class operator IntDivide(const Hex1, Hex2: THexInt): THexInt;
     class operator Modulus(const Hex1, Hex2: THexInt): THexInt;
     // 其他功能
-    function Power(Hex1: THexInt): THexInt;
-    function PowerMod(Hex1, Hex2: THexInt): THexInt;
-    function PowerModFFT(Hex1, Hex2: THexInt): THexInt;
+    function Power(const Hex1: THexInt): THexInt;
+    function PowerMod(const Hex1, Hex2: THexInt): THexInt;
+      //  該組傅立葉變換未經良好的優化
     // 屬性
     property BinValue: string          read GetBinValue         write SetBinValue;
     property DecValue: string          read GetDecValue         write SetDecValue;
@@ -68,22 +88,20 @@ type
   TLongInteger = class
   private
     FSymb: Boolean; // 符号位，True代表正数。
-    FNumL: TList<Boolean>;
-    function SameSignAdd(Par: TLongInteger): TLongInteger;
-    function SameSignSub(Par: TLongInteger): TLongInteger;
-    function MultiplyOri(Par: TLongInteger): TLongInteger;
+    FNumL: TArray<Boolean>;
+    function AbsAdd(Par: TLongInteger): TLongInteger;
+    function AbsSub(Par: TLongInteger): TLongInteger;
     function Mut10PowN(N: TLongInteger): TLongInteger;
     function Div10PowN(N: TLongInteger): TLongInteger;
     function Normalize: TLongInteger;
-    function GetReverseList(ReverseList: TList<Integer>; Bit: Integer): Boolean;
-    function FFT(Complex: TList<Variant>; ReverseList: TList<Integer>; Count: Integer): Boolean;
-      // 未經有效優化，效率低
-    function IFFT(Complex: TList<Variant>; ReverseList: TList<Integer>; Count: Integer): Boolean;
-      // 未經有效優化，效率低
   public
     constructor Create; overload;
     constructor Create(LI: TLongInteger); overload;
     constructor Create(N: Int64); overload;
+    constructor Create(N: Integer); overload;
+    constructor Create(N: Cardinal); overload;
+    constructor Create(N: Word); overload;
+    constructor Create(N: Byte); overload;
     destructor Destroy; override;
     // 複製
     function CopyVal(Par: TLongInteger): TLongInteger;
@@ -101,14 +119,17 @@ type
     function ToString10: string;
     function ToString16: string;
     function ToBytes: TBytes;
+    function ToBytes16: TBytes;
     function FromString2(Str: string): Boolean;
     function FromString10(Str: string): Boolean;
     function FromString16(Str: string): Boolean;
     function FromInteger(N: Byte): TLongInteger; overload;
+    function FromInteger(N: Word): TLongInteger; overload;
     function FromInteger(N: Cardinal): TLongInteger; overload;
     function FromInteger(N: Integer): TLongInteger; overload;
     function FromInteger(N: Int64): TLongInteger; overload;
     function FromBytes(B: TBytes): TLongInteger;
+    function FromBytes16(B: TBytes): TLongInteger;
     function FromRandom(Digits: Integer): TLongInteger;
     function FromRandomOdd(Digits: Integer): TLongInteger;
     function FromRandomEven(Digits: Integer): TLongInteger;
@@ -120,13 +141,10 @@ type
     // 運算
     function Add(Par: TLongInteger): TLongInteger;
     function Subtract(Par: TLongInteger): TLongInteger;
-    function Multiply(Par: TLongInteger): TLongInteger; // 按位分治乘法
     function MultiplyFFT(Par: TLongInteger): TLongInteger; // 應用了快速傅立葉變換的乘法
-      // 註：該傅立葉變換未經良好優化，實測表現不如上述按位分治乘法
     function Divide(Par: TLongInteger): TLongInteger;
     function Modulus(Par: TLongInteger): TLongInteger;
-    function Power(Par: TLongInteger): TLongInteger;
-    function PowerMod(PowPar, ModPar: TLongInteger): TLongInteger;
+    function PowerFFT(Par: TLongInteger): TLongInteger;
     function PowerModFFT(PowPar, ModPar: TLongInteger): TLongInteger; // 將乘法替換爲快速傅立葉變換乘法
     function DivAndMod(Par: TLongInteger; var ModVal: TLongInteger): TLongInteger;
     function DivAndMod10(var ModVal: TLongInteger): TLongInteger;
@@ -138,8 +156,8 @@ type
     function LogicalNot: TLongInteger;
     function ShiftR(Shift: Integer): TLongInteger;
     function ShiftL(Shift: Integer): TLongInteger;
-    // 值
-    function GetNumber(Index: Integer): Boolean;
+      // 值
+    function GetValue(Index: Integer): Boolean;
   end;
 
   TLongReal = class // 用科學記數法記錄實數，Val = FCoe * Power(10, FExp)
@@ -166,6 +184,8 @@ type
     function AbsoluteVal: TLongReal;
     function Positive: TLongReal;
     function Negative: TLongReal;
+    function Trunc(LI: TLongInteger): TLongInteger;
+    function Round(LI: TLongInteger): TLongInteger;
     // 四則運算
     function Add(Par: TLongReal): TLongReal;
     function Subtract(Par: TLongReal): TLongReal;
@@ -175,12 +195,70 @@ type
     // 轉換（僅支持無小數點之科學記數法的轉換）
     function ToStringOri: string;
     function FromStringOri(Str: string): Boolean;
+    function FromInteger(Coe, Exp: Integer): TLongReal; overload;
+    function FromInteger(Coe, Exp: Int64): TLongReal; overload;
+  end;
+
+  TBigInteger = class
+  private
+    FSign: Boolean;
+    FNumbers: TArray<Byte>;
+    function Normalize: TBigInteger;
+    function AbsAdd(const Par: TBigInteger): TBigInteger;
+    function AbsSub(const Par: TBigInteger): TBigInteger;
+    function AbsGreater(const Par: TBigInteger): Boolean;
+    function AbsLess(const Par: TBigInteger): Boolean;
+  public
+    constructor Create; overload;
+    constructor Create(N: Byte); overload;
+    constructor Create(N: Word); overload;
+    constructor Create(N: Cardinal); overload;
+    constructor Create(N: Integer); overload;
+    constructor Create(N: Int64); overload;
+    constructor Create(const BI: TBigInteger); overload;
+    function CopyValue(const Par: TBigInteger): TBigInteger;
+    // 判斷
+    function IsZero: Boolean;
+    function IsEven: Boolean;
+    function IsOdd: Boolean;
+    function GreaterThan(const Par: TBigInteger): Boolean;
+    function LessThan(const Par: TBigInteger): Boolean;
+    function Equal(const Par: TBigInteger): Boolean;
+    // 計算
+    function Zero: TBigInteger;
+    function AbsoluteVal: TBigInteger;
+    function Positive: TBigInteger;
+    function Negative: TBigInteger;
+    function ShiftL(const Value: Integer): TBigInteger;
+    function ShiftR(const Value: Integer): TBigInteger;
+    function Add(Par: TBigInteger): TBigInteger;
+    function Subtract(const Par: TBigInteger): TBigInteger;
+    function MultiplyBase(const Par: TBigInteger): TBigInteger;
+    function MultiplyDNC(const Par: TBigInteger; const Devided: Boolean = False): TBigInteger; // 分治乘法
+    function MultiplyFFT(const Par: TBigInteger): TBigInteger; // 快速傅立葉變換乘法
+    function Divide(const Par: TBigInteger): TBigInteger;
+    function Module(const Par: TBigInteger): TBigInteger;
+    function DivideBase(const Par: TBigInteger; const Module: TBigInteger = nil): TBigInteger;
+    function PowAndModBase(const Par, Module: TBigInteger): TBigInteger;
+    function PowAndModDNC(const Par, Module: TBigInteger): TBigInteger;
+    function PowAndModFFT(const Par, Module: TBigInteger): TBigInteger;
+    // 轉化
+    function FromString16(Str: string): Boolean;
+
   end;
 
   function GetHexChr(N: Byte): Char;
   function GetHexVal(C: Char): Byte;
   function GetDecChr(N: Byte): Char;
   function GetDecVal(C: Char): Byte;
+
+
+  function GetReverseList(var Reverse: TArray<Integer>; Bit: Integer): Boolean;
+
+  function FFT(var Complex: TArray<TComplex>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
+  function IFFT(var Complex: TArray<TComplex>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
+  function FFTBytes(const B: TBytes; var Com: TArray<TComplex>; var Rev: TArray<Integer>; Count: Integer): Boolean;
+  function IFFTBytes(var B: TBytes; var Com: TArray<TComplex>; var Rev: TArray<Integer>; Count: Integer): Boolean;
 
 implementation
 
@@ -268,7 +346,243 @@ begin
   end;
 end;
 
+function GetReverseList(var Reverse: TArray<Integer>; Bit: Integer): Boolean;
+var
+  i: Integer;
+begin
+  if Bit > 31 then
+  begin
+    Exit(False);
+  end;
+  SetLength(Reverse, 1 shl Bit);
+  for i := 0 to (1 shl Bit) - 1 do
+  begin
+    Reverse[i] := (Reverse[i shr 1] shr 1) or ((i and 1) shl (bit - 1));
+  end;
+  Exit(True);
+end;
+
+function FFT(var Complex: TArray<TComplex>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
+var
+  i, j, k, step: Integer;
+  v, x, y, wnk: TComplex;
+begin
+  if (Complex = nil) or (Reverse = nil) or (Count < 1) then
+  begin
+    Exit(False);
+  end;
+  for i := 0 to Count - 1 do if i < Reverse[i] then
+  begin
+    v := Complex[i];
+    Complex[i] := Complex[Reverse[i]];
+    Complex[Reverse[i]] := v;
+  end;
+  step := 1;
+  while step < Count do
+  begin
+    j := 0;
+    while j < Count do
+    begin
+      for k := j to j + step - 1 do
+      begin
+        wnk := TComplex.Create(1, (k - j) * PI / step);
+        x := Complex[k];
+        y := wnk * Complex[k + step];
+        Complex[k] := x + y;
+        Complex[k + step] := x - y;
+      end;
+      j := j + step shl 1;
+    end;
+    step := step shl 1;
+  end;
+  Exit(True);
+end;
+
+function IFFT(var Complex: TArray<TComplex>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
+var
+  i, j, k, step: Integer;
+  v, x, y, wnk: TComplex;
+begin
+  if (Complex = nil) or (Reverse = nil) or (Length(Complex) <> Count) then
+  begin
+    Exit(False);
+  end;
+  for i := 0 to Count - 1 do if i < Reverse[i] then
+  begin
+    v := Complex[i];
+    Complex[i] := Complex[Reverse[i]];
+    Complex[Reverse[i]] := v;
+  end;
+  step := 1;
+  while step < Count do
+  begin
+    j := 0;
+    while j < Count do
+    begin
+      for k := j to j + step - 1 do
+      begin
+        wnk := TComplex.Create(1, (j - k) * PI / step);
+        // wnk := VarComplexCreate(Cos((j - k) * PI / step), Sin((j - k) * PI / step));
+        x := Complex[k];
+        y := wnk * Complex[k + step];
+        Complex[k] := x + y;
+        Complex[k + step] := x - y;
+      end;
+      j := j + step shl 1;
+    end;
+    step := step shl 1;
+  end;
+  for i := 0 to Count - 1 do
+  begin
+    Complex[i] := Complex[i] / Count;
+  end;
+  Exit(True);
+end;
+
+function FFTBytes(const B: TBytes; var Com: TArray<TComplex>; var Rev: TArray<Integer>; Count: Integer): Boolean;
+var
+  i: Integer;
+begin
+  if (Com = nil) or (Rev = nil) or (Count < 1) then
+  begin
+    Exit(False);
+  end;
+  SetLength(Com, Count);
+  for i := 0 to Length(B) - 1 do
+  begin
+    Com[i] := TComplex.Create(B[i], 0);
+  end;
+  for i := Length(B) to Count - 1 do
+  begin
+    Com[i] := TComplex.Create(0, 0);
+  end;
+  FFT(Com, Rev, Count);
+  Exit(True);
+end;
+
+function IFFTBytes(var B: TBytes; var Com: TArray<TComplex>; var Rev: TArray<Integer>; Count: Integer): Boolean;
+var
+  i, j, k: Integer;
+begin
+  IFFT(Com, Rev, Count);
+  k := 0;
+  SetLength(B, Count);
+  for i := 0 to Count - 1 do
+  begin
+    j := Round(Com[i].Real) + k;
+    B[i] := j and 255;
+    k := j shr 8;
+  end;
+  i := Count;
+  while k > 0 do
+  begin
+    SetLength(B, i + 1);
+    B[i] := k and 255;
+    i := i + 1;
+    k := k shr 8;
+  end;
+  Exit(True);
+end;
+
 { TLongInteger }
+
+function TLongInteger.AbsAdd(Par: TLongInteger): TLongInteger;
+var
+  C, X, Y: Boolean;
+  i, l: Integer;
+begin
+  Normalize;
+  Par.Normalize;
+  C := False;
+  l := Max(Length(FNumL), Length(Par.FNumL));
+  SetLength(FNumL, l + 1);
+  for i := 0 to l - 1 do
+  begin
+    if i >= Length(FNumL) then
+    begin
+      FNumL[i] := False;
+    end;
+    X := FNumL[i];
+    if i >= Length(Par.FNumL) then
+    begin
+      Y := False;
+    end
+    else
+    begin
+      Y := Par.FNumL[i];
+    end;
+    FNumL[i] := X xor Y xor C;
+    C := (X and Y) or (C and (X or Y));
+  end;
+  FNumL[l] := C;
+  Normalize;
+  Exit(Self);
+end;
+
+function TLongInteger.AbsSub(Par: TLongInteger): TLongInteger;
+var
+  C, X, Y, G: Boolean;
+  i, l: Integer;
+begin
+  Normalize;
+  Par.Normalize;
+  if Equal(Par) then
+  begin
+    Zero;
+    Exit(Self);
+  end;
+  C := False;
+  if GreaterThan(Par) then
+  begin
+    G := True;
+  end
+  else
+  begin
+    G := False;
+    FSymb := not FSymb;
+  end;
+  l := Max(Length(FNumL), Length(Par.FNumL));
+  SetLength(FNumL, l);
+  for i := 0 to l - 1 do
+  begin
+    if not G then
+    begin
+      if i >= Length(FNumL) then
+      begin
+        FNumL[i] := False;
+      end;
+      Y := FNumL[i];
+      if i >= Length(Par.FNumL) then
+      begin
+        X := False;
+      end
+      else
+      begin
+        X := Par.FNumL[i];
+      end;
+    end
+    else
+    begin
+      if i >= Length(FNumL) then
+      begin
+        FNumL[i] := False;
+      end;
+      X := FNumL[i];
+      if i >= Length(Par.FNumL) then
+      begin
+        Y := False;
+      end
+      else
+      begin
+        Y := Par.FNumL[i];
+      end;
+    end;
+    FNumL[i] := X xor Y xor C;
+    C := (Y and C) or ((not X) and (Y or C))
+  end;
+  Normalize;
+  Exit(Self);
+end;
 
 function TLongInteger.AbsoluteVal: TLongInteger;
 begin
@@ -288,13 +602,11 @@ begin
   end
   else if FSymb = Par.FSymb then
   begin
-    SameSignAdd(Par);
+    AbsAdd(Par);
   end
   else
   begin
-    FSymb := not FSymb;
-    SameSignSub(Par);
-    FSymb := not FSymb;
+    AbsSub(Par);
   end;
   Exit(Self);
 end;
@@ -304,51 +616,108 @@ var
   i: Integer;
 begin
   FSymb := Par.FSymb;
-  FNumL.Clear;
-  for i := 0 to Par.FNumL.Count - 1 do
+  SetLength(FNumL, Length(Par.FNumL));
+  for i := 0 to Length(Par.FNumL) - 1 do
   begin
-    FNumL.Add(Par.FNumL[i]);
+    FNumL[i] := Par.FNumL[i];
   end;
   Exit(Self);
 end;
 
 constructor TLongInteger.Create;
 begin
-  FNumL := TList<Boolean>.Create;
-  FNumL.Add(False);
+  SetLength(FNumL, 1);
+  FNumL[0] := False;
   FSymb := True;
 end;
 
 constructor TLongInteger.Create(LI: TLongInteger);
+var
+  i: Integer;
 begin
-  FNumL := TList<Boolean>.Create;
   FSymb := LI.FSymb;
-  FNumL.AddRange(LI.FNumL);
+  SetLength(FNumL, Length(LI.FNumL));
+  for i := 0 to Length(LI.FNumL) - 1 do
+  begin
+    FNumL[i] := LI.FNumL[i];
+  end;
 end;
 
 constructor TLongInteger.Create(N: Int64);
+var
+  i: Integer;
 begin
-  FNumL := TList<Boolean>.Create;
-  if N >= 0 then
-  begin
-    FSymb := True;
-  end
-  else
-  begin
-    FSymb := False;
-  end;
+  FSymb := (N >= 0);
+  SetLength(FNumL, 64);
+  i := 0;
   N := Abs(N);
   repeat
-    if N mod 2 = 1 then
-    begin
-      FNumL.Add(True);
-    end
-    else
-    begin
-      FNumL.Add(False);
-    end;
-    N := N div 2;
+    FNumL[i] := (N and 1  = 1);
+    N := N shr 1;
+    Inc(i);
   until N = 0;
+  SetLength(FNumL, i);
+end;
+
+constructor TLongInteger.Create(N: Integer);
+var
+  i: Integer;
+begin
+  FSymb := (N >= 0);
+  SetLength(FNumL, 32);
+  i := 0;
+  N := Abs(N);
+  repeat
+    FNumL[i] := (N and 1  = 1);
+    N := N shr 1;
+    Inc(i);
+  until N = 0;
+  SetLength(FNumL, i);
+end;
+
+constructor TLongInteger.Create(N: Cardinal);
+var
+  i: Integer;
+begin
+  FSymb := True;
+  SetLength(FNumL, 32);
+  i := 0;
+  repeat
+    FNumL[i] := (N and 1  = 1);
+    N := N shr 1;
+    Inc(i);
+  until N = 0;
+  SetLength(FNumL, i);
+end;
+
+constructor TLongInteger.Create(N: Word);
+var
+  i: Integer;
+begin
+  FSymb := True;
+  SetLength(FNumL, 16);
+  i := 0;
+  repeat
+    FNumL[i] := (N and 1  = 1);
+    N := N shr 1;
+    Inc(i);
+  until N = 0;
+  SetLength(FNumL, i);
+end;
+
+constructor TLongInteger.Create(N: Byte);
+var
+  i: Integer;
+begin
+  FSymb := True;
+  SetLength(FNumL, 8);
+  i := 0;
+  repeat
+    FNumL[i] := (N and 1  = 1);
+    N := N shr 1;
+    Inc(i);
+  until N = 0;
+  SetLength(FNumL, i);
 end;
 
 function TLongInteger.Decrease(Step: Cardinal): TLongInteger;
@@ -366,13 +735,13 @@ end;
 
 destructor TLongInteger.Destroy;
 begin
-  FreeAndNil(FNumL);
+  SetLength(FNumL, 0);
   inherited;
 end;
 
 function TLongInteger.Digit: Integer;
 begin
-  Exit(FNumL.Count);
+  Exit(Length(FNumL));
 end;
 
 function TLongInteger.Div10PowN(N: TLongInteger): TLongInteger;
@@ -381,7 +750,7 @@ var
 begin
   M := TLongInteger.Create(10);
   try
-    M.Power(N);
+    M.PowerFFT(N);
     Divide(M);
   finally
     FreeAndNil(M);
@@ -418,14 +787,14 @@ begin
       Zero;
       Exit(Self);
     end;
-    n := FNumL.Count - Par.FNumL.Count;
-    BLI.FNumL.Count := n + 1;
+    n := Length(FNumL) - Length(Par.FNumL);
+    SetLength(BLI.FNumL, n + 1);
     ALI.ShiftL(n);
     for i := n downto 0 do
     begin
       if not LessThan(ALI) then
       begin
-        SameSignSub(ALI);
+        AbsSub(ALI);
         BLI.FNumL[i] := True;
       end
       else
@@ -460,9 +829,11 @@ begin
   BLI := TLongInteger.Create;
   Par := TLongInteger.Create;
   try
-    Par.FNumL.Add(True);
-    Par.FNumL.Add(False);
-    Par.FNumL.Add(True);
+    SetLength(Par.FNumL, 4);
+    Par.FNumL[0] := False;
+    Par.FNumL[1] := True;
+    Par.FNumL[2] := False;
+    Par.FNumL[3] := True;
     S := not (FSymb xor Par.FSymb);
     ALI.CopyVal(Par);
     ALI.FSymb := True;
@@ -473,14 +844,14 @@ begin
       Zero;
       Exit(Self);
     end;
-    n := FNumL.Count - Par.FNumL.Count;
-    BLI.FNumL.Count := n + 1;
+    n := Length(FNumL) - Length(Par.FNumL);
+    SetLength(BLI.FNumL, n + 1);
     ALI.ShiftL(n);
     for i := n downto 0 do
     begin
       if not LessThan(ALI) then
       begin
-        SameSignSub(ALI);
+        AbsSub(ALI);
         BLI.FNumL[i] := True;
       end
       else
@@ -530,14 +901,14 @@ begin
       Zero;
       Exit(Self);
     end;
-    n := FNumL.Count - Par.FNumL.Count;
-    BLI.FNumL.Count := n + 1;
+    n := Length(FNumL) - Length(Par.FNumL);
+    SetLength(BLI.FNumL, n + 1);
     ALI.ShiftL(n);
     for i := n downto 0 do
     begin
       if not LessThan(ALI) then
       begin
-        SameSignSub(ALI);
+        AbsSub(ALI);
         BLI.FNumL[i] := True;
       end
       else
@@ -566,11 +937,11 @@ begin
   begin
     Exit(False);
   end;
-  if FNumL.Count <> Par.FNumL.Count then
+  if Length(FNumL) <> Length(Par.FNumL) then
   begin
     Exit(False);
   end;
-  for i := 0 to FNumL.Count - 1 do
+  for i := 0 to Length(FNumL) - 1 do
   begin
     if FNumL[i] <> Par.FNumL[i] then
     begin
@@ -580,172 +951,139 @@ begin
   Exit(True);
 end;
 
-function TLongInteger.FromInteger(N: Byte): TLongInteger;
+function TLongInteger.FromBytes(B: TBytes): TLongInteger;
+var
+  n: Byte;
+  i, l: Integer;
 begin
   FSymb := True;
-  FNumL.Clear;
-  N := Abs(N);
+  l := Length(B);
+  SetLength(FNumL, 8 * l);
+  for i := 0 to l - 1 do
+  begin
+    n := B[i];
+    FNumL[8 * i] := (n and 1 = 1);
+    n := n shr 1;
+    FNumL[8 * i + 1] := (n and 1 = 1);
+    n := n shr 1;
+    FNumL[8 * i + 2] := (n and 1 = 1);
+    n := n shr 1;
+    FNumL[8 * i + 3] := (n and 1 = 1);
+    n := n shr 1;
+    FNumL[8 * i + 4] := (n and 1 = 1);
+    n := n shr 1;
+    FNumL[8 * i + 5] := (n and 1 = 1);
+    n := n shr 1;
+    FNumL[8 * i + 6] := (n and 1 = 1);
+    n := n shr 1;
+    FNumL[8 * i + 7] := (n and 1 = 1);
+  end;
+  Normalize;
+  Exit(Self);
+end;
+
+function TLongInteger.FromBytes16(B: TBytes): TLongInteger;
+var
+  n: Byte;
+  i, l: Integer;
+begin
+  FSymb := True;
+  l := Length(B);
+  SetLength(FNumL, 4 * l);
+  for i := 0 to l - 1 do
+  begin
+    n := B[i];
+    FNumL[4 * i] := (n and 1 = 1);
+    n := n shr 1;
+    FNumL[4 * i + 1] := (n and 1 = 1);
+    n := n shr 1;
+    FNumL[4 * i + 2] := (n and 1 = 1);
+    n := n shr 1;
+    FNumL[4 * i + 3] := (n and 1 = 1);
+  end;
+  Normalize;
+  Exit(Self);
+end;
+
+function TLongInteger.FromInteger(N: Byte): TLongInteger;
+var
+  i: Integer;
+begin
+  FSymb := True;
+  SetLength(FNumL, 8);
+  i := 0;
   repeat
-    if N mod 2 = 1 then
-    begin
-      FNumL.Add(True);
-    end
-    else
-    begin
-      FNumL.Add(False);
-    end;
-    N := N div 2;
+    FNumL[i] := (N and 1  = 1);
+    N := N shr 1;
+    Inc(i);
   until N = 0;
+  SetLength(FNumL, i);
   Exit(Self);
 end;
 
 function TLongInteger.FromInteger(N: Cardinal): TLongInteger;
+var
+  i: Integer;
 begin
   FSymb := True;
-  FNumL.Clear;
-  N := Abs(N);
+  SetLength(FNumL, 32);
+  i := 0;
   repeat
-    if N mod 2 = 1 then
-    begin
-      FNumL.Add(True);
-    end
-    else
-    begin
-      FNumL.Add(False);
-    end;
-    N := N div 2;
+    FNumL[i] := (N and 1  = 1);
+    N := N shr 1;
+    Inc(i);
   until N = 0;
+  SetLength(FNumL, i);
   Exit(Self);
 end;
 
 function TLongInteger.FromInteger(N: Integer): TLongInteger;
+var
+  i: Integer;
 begin
-  if N >= 0 then
-  begin
-    FSymb := True;
-  end
-  else
-  begin
-    FSymb := False;
-  end;
-  FNumL.Clear;
+  FSymb := (N >= 0);
+  SetLength(FNumL, 32);
+  i := 0;
   N := Abs(N);
   repeat
-    if N mod 2 = 1 then
-    begin
-      FNumL.Add(True);
-    end
-    else
-    begin
-      FNumL.Add(False);
-    end;
-    N := N div 2;
+    FNumL[i] := (N and 1  = 1);
+    N := N shr 1;
+    Inc(i);
   until N = 0;
-  Exit(Self);
-end;
-
-function TLongInteger.FFT(Complex: TList<Variant>; ReverseList: TList<Integer>; Count: Integer): Boolean;
-var
-  i, j, k, step: Integer;
-  v, x, y, wn, wnk: Variant;
-begin
-  if (Complex = nil) or (ReverseList = nil) or (Count < 1) then
-  begin
-    Exit(False);
-  end;
-  Complex.Clear;
-  for i := 0 to FNumL.Count - 1 do
-  begin
-    if FNumL[i] then
-    begin
-      Complex.Add(VarComplexCreate(1));
-    end
-    else
-    begin
-      Complex.Add(VarComplexCreate(0));
-    end;
-  end;
-  Complex.Count := Count;
-  for i := 0 to Count - 1 do if i < ReverseList[i] then
-  begin
-    v := Complex[i];
-    Complex[i] := Complex[ReverseList[i]];
-    Complex[ReverseList[i]] := v;
-  end;
-  step := 1;
-  while step < Count do
-  begin
-    wn := VarComplexExp(VarComplexCreate(0, PI / step));
-    j := 0;
-    while j < Count do
-    begin
-      wnk := VarComplexCreate(1);
-      for k := j to j + step - 1 do
-      begin
-        x := Complex[k];
-        y := wnk * Complex[k + step];
-        Complex[k] := x + y;
-        Complex[k + step] := x - y;
-        wnk := wnk * wn;
-      end;
-      j := j + step shl 1;
-    end;
-    step := step shl 1;
-  end;
-  Exit(True);
-end;
-
-function TLongInteger.FromBytes(B: TBytes): TLongInteger;
-var
-  n: Byte;
-  i, j, l: Integer;
-  LI: TLongInteger;
-begin
-  LI := TLongInteger.Create;
-  try
-    FSymb := True;
-    FNumL.Clear;
-    l := Length(B);
-    for i := 0 to l - 1 do
-    begin
-      n := B[i];
-      LI.FromInteger(n);
-      FNumL.AddRange(LI.FNumL);
-      for j := LI.FNumL.Count to 7 do
-      begin
-        FNumL.Add(False);
-      end;
-    end;
-    FNumL.Add(True); // 确保不会以零为首
-  finally
-    FreeAndNil(LI);
-  end;
+  SetLength(FNumL, i);
   Exit(Self);
 end;
 
 function TLongInteger.FromInteger(N: Int64): TLongInteger;
+var
+  i: Integer;
 begin
-  if N >= 0 then
-  begin
-    FSymb := True;
-  end
-  else
-  begin
-    FSymb := False;
-  end;
-  FNumL.Clear;
+  FSymb := (N >= 0);
+  SetLength(FNumL, 64);
+  i := 0;
   N := Abs(N);
   repeat
-    if N mod 2 = 1 then
-    begin
-      FNumL.Add(True);
-    end
-    else
-    begin
-      FNumL.Add(False);
-    end;
-    N := N div 2;
+    FNumL[i] := (N and 1  = 1);
+    N := N shr 1;
+    Inc(i);
   until N = 0;
+  SetLength(FNumL, i);
+  Exit(Self);
+end;
+
+function TLongInteger.FromInteger(N: Word): TLongInteger;
+var
+  i: Integer;
+begin
+  FSymb := True;
+  SetLength(FNumL, 16);
+  i := 0;
+  repeat
+    FNumL[i] := (N and 1  = 1);
+    N := N shr 1;
+    Inc(i);
+  until N = 0;
+  SetLength(FNumL, i);
   Exit(Self);
 end;
 
@@ -759,20 +1097,13 @@ begin
     Exit(Self);
   end;
   FSymb := True;
-  FNumL.Clear;
+  SetLength(FNumL, Digits);
   for i := 0 to Digits - 2 do
   begin
     Randomize;
-    if Random < 0.5 then
-    begin
-      FNumL.Add(True);
-    end
-    else
-    begin
-      FNumL.Add(False);
-    end;
+    FNumL[i] := (Random < 0.5);
   end;
-  FNumL.Add(True);
+  FNumL[Digits - 1] := True;;
   Exit(Self);
 end;
 
@@ -786,21 +1117,14 @@ begin
     Exit(Self);
   end;
   FSymb := True;
-  FNumL.Clear;
-  FNumL.Add(False);
+  SetLength(FNumL, Digits);
+  FNumL[0] := False;
   for i := 1 to Digits - 2 do
   begin
     Randomize;
-    if Random < 0.5 then
-    begin
-      FNumL.Add(True);
-    end
-    else
-    begin
-      FNumL.Add(False);
-    end;
+    FNumL[i] := (Random < 0.5);
   end;
-  FNumL.Add(True);
+  FNumL[Digits - 1] := True;;
   Exit(Self);
 end;
 
@@ -814,21 +1138,14 @@ begin
     Exit(Self);
   end;
   FSymb := True;
-  FNumL.Clear;
-  FNumL.Add(True);
+  SetLength(FNumL, Digits);
+  FNumL[0] := True;
   for i := 1 to Digits - 2 do
   begin
     Randomize;
-    if Random < 0.5 then
-    begin
-      FNumL.Add(True);
-    end
-    else
-    begin
-      FNumL.Add(False);
-    end;
+    FNumL[i] := (Random < 0.5);
   end;
-  FNumL.Add(True);
+  FNumL[Digits - 1] := True;;
   Exit(Self);
 end;
 
@@ -865,14 +1182,16 @@ begin
   LI := TLongInteger.Create;
   Par := TLongInteger.Create;
   try
-    Par.FNumL.Add(True);
-    Par.FNumL.Add(False);
-    Par.FNumL.Add(True);
+    SetLength(Par.FNumL, 4);
+    Par.FNumL[0] := False;
+    Par.FNumL[1] := True;
+    Par.FNumL[2] := False;
+    Par.FNumL[3] := True;
     for i := 0 to l - 1 do
     begin
       v := GetDecVal(Str.Chars[i]);
       LI.FromInteger(v);
-      MultiplyOri(Par).Add(LI);
+      MultiplyFFT(Par).Add(LI);
     end;
   finally
     FreeAndNil(LI);
@@ -905,45 +1224,17 @@ begin
       Exit(False);
     end;
     FSymb := False;
-    FNumL.Clear;
-    for i := l - 1 downto 1 do
+    SetLength(FNumL, 4 * l - 4);
+    for i := 0 to l - 2 do
     begin
-      v := GetHexVal(Str.Chars[i]);
-      if v mod 2 = 1 then
-      begin
-        FNumL.Add(True);
-      end
-      else
-      begin
-        FNumL.Add(False);
-      end;
-      v := v div 2;
-      if v mod 2 = 1 then
-      begin
-        FNumL.Add(True);
-      end
-      else
-      begin
-        FNumL.Add(False);
-      end;
-      v := v div 2;
-      if v mod 2 = 1 then
-      begin
-        FNumL.Add(True);
-      end
-      else
-      begin
-        FNumL.Add(False);
-      end;
-      v := v div 2;
-      if v mod 2 = 1 then
-      begin
-        FNumL.Add(True);
-      end
-      else
-      begin
-        FNumL.Add(False);
-      end;
+      v := GetHexVal(Str.Chars[l - 1 - i]);
+      FNumL[4 * i] := (v and 1 = 1);
+      v := v shr 1;
+      FNumL[4 * i + 1] := (v and 1 = 1);
+      v := v shr 1;
+      FNumL[4 * i + 2] := (v and 1 = 1);
+      v := v shr 1;
+      FNumL[4 * i + 3] := (v and 1 = 1);
     end;
   end
   else
@@ -960,45 +1251,17 @@ begin
       end;
     end;
     FSymb := True;
-    FNumL.Clear;
-    for i := l - 1 downto 0 do
+    SetLength(FNumL, 4 * l);
+    for i := 0 to l - 1 do
     begin
-      v := GetHexVal(Str.Chars[i]);
-      if v mod 2 = 1 then
-      begin
-        FNumL.Add(True);
-      end
-      else
-      begin
-        FNumL.Add(False);
-      end;
-      v := v div 2;
-      if v mod 2 = 1 then
-      begin
-        FNumL.Add(True);
-      end
-      else
-      begin
-        FNumL.Add(False);
-      end;
-      v := v div 2;
-      if v mod 2 = 1 then
-      begin
-        FNumL.Add(True);
-      end
-      else
-      begin
-        FNumL.Add(False);
-      end;
-      v := v div 2;
-      if v mod 2 = 1 then
-      begin
-        FNumL.Add(True);
-      end
-      else
-      begin
-        FNumL.Add(False);
-      end;
+      v := GetHexVal(Str.Chars[l - 1 - i]);
+      FNumL[4 * i] := (v and 1 = 1);
+      v := v shr 1;
+      FNumL[4 * i + 1] := (v and 1 = 1);
+      v := v shr 1;
+      FNumL[4 * i + 2] := (v and 1 = 1);
+      v := v shr 1;
+      FNumL[4 * i + 3] := (v and 1 = 1);
     end;
   end;
   Normalize;
@@ -1013,6 +1276,7 @@ begin
   begin
     Exit(False);
   end;
+  Str := UpperCase(Str);
   l := Str.Length;
   if Str.Chars[0] = '-' then
   begin
@@ -1020,25 +1284,15 @@ begin
     begin
       Exit(False);
     end;
-    for i := 1 to l - 1 do
+    for i := 1 to l - 1 do if GetHexVal(Str.Chars[i]) > 1 then
     begin
-      if not ((Str.Chars[i] = '0') or (Str.Chars[i] = '1')) then
-      begin
-        Exit(False);
-      end;
+      Exit(False);
     end;
     FSymb := False;
-    FNumL.Clear;
-    for i := l - 1 downto 1 do
+    SetLength(FNumL, l - 1);
+    for i := 0 to l - 2 do
     begin
-      if Str.Chars[i] = '0' then
-      begin
-        FNumL.Add(False);
-      end
-      else if Str.Chars[i] = '1' then
-      begin
-        FNumL.Add(True);
-      end;
+      FNumL[i] := (Str.Chars[l - 1 - i] = '1');
     end;
   end
   else
@@ -1047,51 +1301,24 @@ begin
     begin
       Exit(False);
     end;
-    for i := 0 to l - 1 do
+    for i := 0 to l - 1 do if GetHexVal(Str.Chars[i]) > 1 then
     begin
-      if not ((Str.Chars[i] = '0') or (Str.Chars[i] = '1')) then
-      begin
-        Exit(False);
-      end;
+      Exit(False);
     end;
     FSymb := True;
-    FNumL.Clear;
-    for i := l - 1 downto 0 do
+    SetLength(FNumL, l);
+    for i := 0 to l - 1 do
     begin
-      if Str.Chars[i] = '0' then
-      begin
-        FNumL.Add(False);
-      end
-      else if Str.Chars[i] = '1' then
-      begin
-        FNumL.Add(True);
-      end;
+      FNumL[i] := (Str.Chars[l - 1 - i] = '1');
     end;
   end;
   Normalize;
   Exit(True);
 end;
 
-function TLongInteger.GetNumber(Index: Integer): Boolean;
+function TLongInteger.GetValue(Index: Integer): Boolean;
 begin
   Exit(FNumL[Index]);
-end;
-
-function TLongInteger.GetReverseList(ReverseList: TList<Integer>; Bit: Integer): Boolean;
-var
-  i: Integer;
-begin
-  if (Bit > 31) or (ReverseList = nil) then
-  begin
-    Exit(False);
-  end;
-  ReverseList.Clear;
-  ReverseList.Count := 1 shl Bit;
-  for i := 0 to (1 shl Bit) - 1 do
-  begin
-    ReverseList[i] := (ReverseList[i shr 1] shr 1) or ((i and 1) shl (bit - 1));
-  end;
-  Exit(True);
 end;
 
 function TLongInteger.GreaterThan(Par: TLongInteger): Boolean;
@@ -1108,15 +1335,15 @@ begin
   begin
     Exit(False);
   end;
-  if FNumL.Count > Par.FNumL.Count then
+  if Length(FNumL) > Length(Par.FNumL) then
   begin
     Exit(True);
   end;
-  if FNumL.Count < Par.FNumL.Count then
+  if Length(FNumL) < Length(Par.FNumL) then
   begin
     Exit(False);
   end;
-  for i := FNumL.Count - 1 downto 0 do
+  for i := Length(FNumL) - 1 downto 0 do
   begin
     if FNumL[i] and not Par.FNumL[i] then
     begin
@@ -1128,61 +1355,6 @@ begin
     end;
   end;
   Exit(False);
-end;
-
-function TLongInteger.IFFT(Complex: TList<Variant>; ReverseList: TList<Integer>; Count: Integer): Boolean;
-var
-  i, j, k, step: Integer;
-  v, x, y, wn, wnk: Variant;
-begin
-  if (Complex = nil) or (ReverseList = nil) or (Complex.Count <> Count) then
-  begin
-    Exit(False);
-  end;
-  for i := 0 to Count - 1 do if i < ReverseList[i] then
-  begin
-    v := Complex[i];
-    Complex[i] := Complex[ReverseList[i]];
-    Complex[ReverseList[i]] := v;
-  end;
-  step := 1;
-  while step < Count do
-  begin
-    wn := VarComplexExp(VarComplexCreate(0, - PI / step));
-    j := 0;
-    while j < Count do
-    begin
-      wnk := VarComplexCreate(1);
-      for k := j to j + step - 1 do
-      begin
-        x := Complex[k];
-        y := wnk * Complex[k + step];
-        Complex[k] := x + y;
-        Complex[k + step] := x - y;
-        wnk := wnk * wn;
-      end;
-      j := j + step shl 1;
-    end;
-    step := step shl 1;
-  end;
-  for i := 0 to Count - 1 do
-  begin
-    Complex[i] := Complex[i] / Count;
-  end;
-  FNumL.Clear;
-  k := 0;
-  for i := 0 to Count - 1 do
-  begin
-    j := Round(Complex[i].Real) + k;
-    FNumL.Add(j and 1 = 1);
-    k := j shr 1;
-  end;
-  while k > 0 do
-  begin
-    FNumL.Add(k and 1 = 1);
-    k := k shr 1;
-  end;
-  Exit(True);
 end;
 
 function TLongInteger.Increase(Step: Cardinal): TLongInteger;
@@ -1200,18 +1372,18 @@ end;
 
 function TLongInteger.IsEven: Boolean;
 begin
-  Exit((FNumL.Count > 0) and (FNumL[0] = False));
+  Exit((Length(FNumL) > 0) and (FNumL[0] = False));
 end;
 
 function TLongInteger.IsOdd: Boolean;
 begin
-  Exit((FNumL.Count > 0) and (FNumL[0] = True));
+  Exit((Length(FNumL) > 0) and (FNumL[0] = True));
 end;
 
 function TLongInteger.IsZero: Boolean;
 begin
   Normalize;
-  if (FSymb = True) and (FNumL.Count = 1) and (FNumL[0] = False) then
+  if (FSymb = True) and (Length(FNumL) = 1) and (FNumL[0] = False) then
   begin
     Exit(True);
   end
@@ -1235,15 +1407,15 @@ begin
   begin
     Exit(True);
   end;
-  if FNumL.Count > Par.FNumL.Count then
+  if Length(FNumL) > Length(Par.FNumL) then
   begin
     Exit(False);
   end;
-  if FNumL.Count < Par.FNumL.Count then
+  if Length(FNumL) < Length(Par.FNumL) then
   begin
     Exit(True);
   end;
-  for i := FNumL.Count - 1 downto 0 do
+  for i := Length(FNumL) - 1 downto 0 do
   begin
     if FNumL[i] and not Par.FNumL[i] then
     begin
@@ -1263,19 +1435,18 @@ var
 begin
   Normalize;
   Par.Normalize;
-  if FNumL.Count < Par.FNumL.Count then
+  if Length(FNumL) < Length(Par.FNumL) then
   begin
-    n := FNumL.Count;
+    n := Length(FNumL);
   end
   else
   begin
-    n := Par.FNumL.Count;
+    n := Length(Par.FNumL);
   end;
   for i := 0 to n - 1 do
   begin
     FNumL[i] := FNumL[i] and Par.FNumL[i];
   end;
-  FNumL.Count := n;
   Normalize;
   Exit(Self);
 end;
@@ -1284,7 +1455,7 @@ function TLongInteger.LogicalNot: TLongInteger;
 var
   i: Integer;
 begin
-  for i := 0 to FNumL.Count - 1 do
+  for i := 0 to Length(FNumL) - 1 do
   begin
     FNumL[i] := not FNumL[i];
   end;
@@ -1298,23 +1469,24 @@ var
 begin
   Normalize;
   Par.Normalize;
-  if FNumL.Count > Par.FNumL.Count then
+  if Length(FNumL) > Length(Par.FNumL) then
   begin
-    n := FNumL.Count;
+    n := Length(FNumL);
   end
   else
   begin
-    n := Par.FNumL.Count;
+    n := Length(Par.FNumL);
+    SetLength(FNumL, n);
   end;
-  for i := 0 to n - 1 do if i < Par.FNumL.Count then
+  for i := 0 to n - 1 do if i < Length(Par.FNumL) then
   begin
-    if i < FNumL.Count then
+    if i < Length(FNumL) then
     begin
       FNumL[i] := FNumL[i] or Par.FNumL[i];
     end
     else
     begin
-      FNumL.Add(Par.FNumL[i]);
+      FNumL[i] := Par.FNumL[i];
     end;
   end;
   Normalize;
@@ -1327,23 +1499,24 @@ var
 begin
   Normalize;
   Par.Normalize;
-  if FNumL.Count > Par.FNumL.Count then
+  if Length(FNumL) > Length(Par.FNumL) then
   begin
-    n := FNumL.Count;
+    n := Length(FNumL);
   end
   else
   begin
-    n := Par.FNumL.Count;
+    n := Length(Par.FNumL);
+    SetLength(FNumL, n);
   end;
-  for i := 0 to n - 1 do if i < Par.FNumL.Count then
+  for i := 0 to n - 1 do if i < Length(Par.FNumL) then
   begin
-    if i < FNumL.Count then
+    if i < Length(FNumL) then
     begin
       FNumL[i] := FNumL[i] xor Par.FNumL[i];
     end
     else
     begin
-      FNumL.Add(Par.FNumL[i]);
+      FNumL[i] := Par.FNumL[i];
     end;
   end;
   Normalize;
@@ -1378,13 +1551,13 @@ begin
       FSymb := S;
       Exit(Self);
     end;
-    n := FNumL.Count - Par.FNumL.Count;
+    n := Length(FNumL) - Length(Par.FNumL);
     ALI.ShiftL(n);
     for i := n downto 0 do
     begin
       if not LessThan(ALI) then
       begin
-        SameSignSub(ALI);
+        AbsSub(ALI);
       end;
       ALI.ShiftR(1);
     end;
@@ -1396,120 +1569,13 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.Multiply(Par: TLongInteger): TLongInteger;
-var
-  ALI, BLI, CLI, DLI, XLI, YLI, ZLI: TLongInteger;
-  i, n: Integer;
-  S: Boolean;
-begin
-  Normalize;
-  Par.Normalize;
-  if IsZero or Par.IsZero then
-  begin
-    Zero;
-    Exit(Self);
-  end;
-  if (FNumL.Count * 2 <= Par.FNumL.Count) or (Par.FNumL.Count * 2 <= FNumL.Count) then
-  begin
-    Exit(MultiplyOri(Par));
-  end;
-  ALI := TLongInteger.Create;
-  BLI := TLongInteger.Create;
-  CLI := TLongInteger.Create;
-  DLI := TLongInteger.Create;
-  XLI := TLongInteger.Create;
-  YLI := TLongInteger.Create;
-  ZLI := TLongInteger.Create;
-  try
-    S := not (FSymb xor Par.FSymb);
-    ALI.FNumL.Clear;
-    BLI.FNumL.Clear;
-    CLI.FNumL.Clear;
-    DLI.FNumL.Clear;
-    if FNumL.Count < Par.FNumL.Count then
-    begin
-      n := (Par.FNumL.Count + 1) div 2;
-    end
-    else
-    begin
-      n := (FNumL.Count + 1) div 2;
-    end;
-    for i := 0 to n - 1 do
-    begin
-      if i < FNumL.Count then
-      begin
-        BLI.FNumL.Add(FNumL[i]);
-      end
-      else
-      begin
-        BLI.FNumL.Add(False);
-      end;
-      if i < Par.FNumL.Count then
-      begin
-        DLI.FNumL.Add(Par.FNumL[i]);
-      end
-      else
-      begin
-        DLI.FNumL.Add(False);
-      end;
-    end;
-    for i := n to 2 * n do
-    begin
-      if i < FNumL.Count then
-      begin
-        ALI.FNumL.Add(FNumL[i]);
-      end
-      else
-      begin
-        ALI.FNumL.Add(False);
-      end;
-      if i < Par.FNumL.Count then
-      begin
-        CLI.FNumL.Add(Par.FNumL[i]);
-      end
-      else
-      begin
-        CLI.FNumL.Add(False);
-      end;
-    end;
-    if ALI.FNumL.Count > 64 then
-    begin
-      XLI.CopyVal(ALI).Multiply(CLI);
-      YLI.CopyVal(BLI).Multiply(DLI);
-      ZLI.CopyVal(ALI.Subtract(BLI)).Multiply(DLI.Subtract(CLI));
-      ZLI.Add(XLI).Add(YLI);
-      CopyVal(YLI);
-      Add(ZLI.ShiftL(n)).Add(XLI.ShiftL(2 * n));
-    end
-    else
-    begin
-      XLI.CopyVal(ALI).MultiplyOri(CLI);
-      YLI.CopyVal(BLI).MultiplyOri(DLI);
-      ZLI.CopyVal(ALI.Subtract(BLI)).MultiplyOri(DLI.Subtract(CLI));
-      ZLI.Add(XLI).Add(YLI);
-      CopyVal(YLI);
-      Add(ZLI.ShiftL(n)).Add(XLI.ShiftL(2 * n));
-    end;
-  finally
-    FreeAndNil(ALI);
-    FreeAndNil(BLI);
-    FreeAndNil(CLI);
-    FreeAndNil(DLI);
-    FreeAndNil(XLI);
-    FreeAndNil(YLI);
-    FreeAndNil(ZLI);
-  end;
-  FSymb := S;
-  Normalize;
-  Exit(Self);
-end;
-
 function TLongInteger.MultiplyFFT(Par: TLongInteger): TLongInteger;
 var
   Bit, NumLength, i: Integer;
-  RevList: TList<Integer>;
-  ComplexA, ComplexB: TList<Variant>;
+  RevList: TArray<Integer>;
+  ComplexA, ComplexB: TArray<TComplex>;
   S: Boolean;
+  B1, B2: TBytes;
 begin
   Normalize;
   Par.Normalize;
@@ -1519,71 +1585,26 @@ begin
     Exit(Self);
   end;
   S := not (FSymb xor Par.FSymb);
+  B1 := ToBytes;
+  B2 := Par.ToBytes;
   Bit := 1;
   NumLength := 2;
-  while (1 shl bit) < (FNumL.Count + Par.FNumL.Count - 1) do
+  while (1 shl bit) < Length(B1) + Length(B2) - 1 do
   begin
     NumLength := NumLength shl 1;
     Bit := Bit + 1;
   end;
-  RevList := TList<Integer>.Create;
-  ComplexA := TList<Variant>.Create;
-  ComplexB := TList<Variant>.Create;
-  try
-    GetReverseList(RevList, Bit);
-    FFT(ComplexA, RevList, NumLength);
-    Par.FFT(ComplexB, RevList, NumLength);
-    for i := 0 to ComplexA.Count - 1 do
-    begin
-      ComplexA[i] := ComplexA[i] * ComplexB[i];
-    end;
-    IFFT(ComplexA, RevList, NumLength);
-  finally
-    FreeAndNil(RevList);
-    FreeAndNil(ComplexA);
-    FreeAndNil(ComplexB);
-  end;
-  FSymb := S;
-  Normalize;
-  Exit(Self);
-end;
-
-function TLongInteger.MultiplyOri(Par: TLongInteger): TLongInteger;
-var
-  ALI, BLI: TLongInteger;
-  n, i: Integer;
-  S: Boolean;
-begin
-  Normalize;
-  Par.Normalize;
-  if IsZero or Par.IsZero then
+  SetLength(ComplexA, NumLength);
+  SetLength(ComplexB, NumLength);
+  GetReverseList(RevList, Bit);
+  FFTBytes(B1, ComplexA, RevList, NumLength);
+  FFTBytes(B2, ComplexB, RevList, NumLength);
+  for i := 0 to NumLength - 1 do
   begin
-    Zero;
-    Exit(Self);
+    ComplexA[i] := ComplexA[i] * ComplexB[i];
   end;
-  ALI := TLongInteger.Create;
-  BLI := TLongInteger.Create;
-  try
-    S := not (FSymb xor Par.FSymb);
-    ALI.CopyVal(Self);
-    ALI.FSymb := True;
-    BLI.CopyVal(Par);
-    BLI.FSymb := True;
-    Zero;
-    n := 0;
-    for i := 0 to BLI.FNumL.Count - 1 do
-    begin  
-      if Par.FNumL[i] then
-      begin
-        ALI.ShiftL(i - n);
-        n := i;
-        SameSignAdd(ALI);
-      end;
-    end;
-  finally
-    FreeAndNil(ALI);
-    FreeAndNil(BLI);
-  end;       
+  IFFTBytes(B1, ComplexA, RevList, NumLength);
+  FromBytes(B1);
   FSymb := S;
   Normalize;
   Exit(Self);
@@ -1595,8 +1616,8 @@ var
 begin
   M := TLongInteger.Create(10);
   try
-    M.Power(N);
-    Multiply(M);
+    M.PowerFFT(N);
+    MultiplyFFT(M);
   finally
     FreeAndNil(M);
   end;
@@ -1611,14 +1632,21 @@ begin
 end;
 
 function TLongInteger.Normalize: TLongInteger;
+var
+  i, l: Integer;
 begin
-  while (FNumL.Count > 1) and (FNumL.Last = False) do
+  l := Length(FNumL);
+  for i := l downto 0 do
   begin
-    FNumL.Delete(FNumL.Count - 1);
-  end;
-  if (FNumL.Count = 1) and (FNumL[0] = False) then
-  begin
-    FSymb := True;
+    if (i > 0) and FNumL[i - 1] then
+    begin
+      SetLength(FNumL, i);
+      Break;
+    end
+    else if i = 0 then
+    begin
+      Zero;
+    end;
   end;
   Exit(Self);
 end;
@@ -1628,11 +1656,10 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.Power(Par: TLongInteger): TLongInteger;
+function TLongInteger.PowerFFT(Par: TLongInteger): TLongInteger;
 var
-  LIList: TObjectList<TLongInteger>;
+  LIB, LIP: TLongInteger;
   S: Boolean;
-  i: Integer;
 begin
   if Par.IsZero or not Par.FSymb then
   begin
@@ -1642,7 +1669,7 @@ begin
   begin
     Exit(Self);
   end;
-  if not FSymb and Par.FNumL[0] then
+  if not Par.FNumL[0] then
   begin
     S := True;
   end
@@ -1651,85 +1678,31 @@ begin
     S := FSymb;
   end;
   FSymb := True;
-  LIList := TObjectList<TLongInteger>.Create;
+  LIB := TLongInteger.Create(Self);
+  LIP := TLongInteger.Create(Par);
+  SetLength(FNumL, 1);
+  FNumL[0] := True;
   try
-    LIList.Add(TLongInteger.Create);
-    LIList[0].CopyVal(Self);
-    for i := 0 to Par.FNumL.Count - 2 do
+    while LIP.FSymb and not LIP.IsZero do
     begin
-      LIList.Add(TLongInteger.Create(LIList[i]).Multiply(LIList[i]));
-    end;
-    if not FSymb and Par.FNumL[0] then
-    begin
-      FSymb := True;
-    end;
-    FNumL.Clear;
-    FNumL.Add(True);
-    for i := 0 to Par.FNumL.Count - 1 do if Par.FNumL[i] then
-    begin
-      Multiply(LIList[i]);
+      if LIP.FNumL[0] then
+      begin
+        MultiplyFFT(LIB);
+      end;
+      LIP.ShiftR(1);
+      LIB.MultiplyFFT(LIB);
     end;
   finally
-    FreeAndNil(LIList);
+    LIB.DisposeOf;
+    LIP.DisposeOf;
   end;
-  Normalize;
-  FSymb := S;
-  Exit(Self);
-end;
-
-function TLongInteger.PowerMod(PowPar, ModPar: TLongInteger): TLongInteger;
-var
-  LIList: TObjectList<TLongInteger>;
-  i: Integer;
-  S: Boolean;
-begin
-  if PowPar.IsZero or not PowPar.FSymb then
-  begin
-    raise EPowerError.Create('Error Message: Power index must be greater than ZERO!');
-  end;
-  if ModPar.IsZero then
-  begin
-    raise EZeroError.Create('Error Message: Cannot divide ZERO!');
-  end;
-  if IsZero then
-  begin
-    Exit(Self);
-  end;
-  if not FSymb and PowPar.FNumL[0] then
-  begin
-    S := True;
-  end
-  else
-  begin
-    S := FSymb;
-  end;
-  FSymb := True;
-  LIList := TObjectList<TLongInteger>.Create;
-  try
-    LIList.Add(TLongInteger.Create(Self));
-    LIList[0].Modulus(ModPar);
-    for i := 0 to PowPar.FNumL.Count - 2 do
-    begin
-      LIList.Add(TLongInteger.Create(LIList[i]).Multiply(LIList[i]).Modulus(ModPar));
-    end;
-    FNumL.Clear;
-    FNumL.Add(True);
-    for i := 0 to PowPar.FNumL.Count - 1 do if PowPar.FNumL[i] then
-    begin
-      Multiply(LIList[i]).Modulus(ModPar);
-    end;
-  finally
-    FreeAndNil(LIList);
-  end;
-  Normalize;
   FSymb := S;
   Exit(Self);
 end;
 
 function TLongInteger.PowerModFFT(PowPar, ModPar: TLongInteger): TLongInteger;
 var
-  LIList: TObjectList<TLongInteger>;
-  i: Integer;
+  LIB, LIP: TLongInteger;
   S: Boolean;
 begin
   if PowPar.IsZero or not PowPar.FSymb then
@@ -1744,7 +1717,7 @@ begin
   begin
     Exit(Self);
   end;
-  if not FSymb and PowPar.FNumL[0] then
+  if not PowPar.FNumL[0] then
   begin
     S := True;
   end
@@ -1753,166 +1726,43 @@ begin
     S := FSymb;
   end;
   FSymb := True;
-  LIList := TObjectList<TLongInteger>.Create;
+  LIB := TLongInteger.Create(Self);
+  LIP := TLongInteger.Create(PowPar);
+  SetLength(FNumL, 1);
+  FNumL[0] := True;
   try
-    LIList.Add(TLongInteger.Create(Self));
-    LIList[0].Modulus(ModPar);
-    for i := 0 to PowPar.FNumL.Count - 2 do
+    while LIP.FSymb and not LIP.IsZero do
     begin
-      LIList.Add(TLongInteger.Create(LIList[i]).MultiplyFFT(LIList[i]).Modulus(ModPar));
-    end;
-    FNumL.Clear;
-    FNumL.Add(True);
-    for i := 0 to PowPar.FNumL.Count - 1 do if PowPar.FNumL[i] then
-    begin
-      MultiplyFFT(LIList[i]).Modulus(ModPar);
+      if LIP.FNumL[0] then
+      begin
+        MultiplyFFT(LIB).Modulus(ModPar);
+      end;
+      LIP.ShiftR(1);
+      LIB.MultiplyFFT(LIB).Modulus(ModPar);
     end;
   finally
-    FreeAndNil(LIList);
+    LIB.DisposeOf;
+    LIP.DisposeOf;
   end;
-  Normalize;
   FSymb := S;
-  Exit(Self);
-end;
-
-function TLongInteger.SameSignAdd(Par: TLongInteger): TLongInteger;
-var
-  F, X, Y, P, Q: Boolean;
-  a, b, n: Integer;
-  i: Integer;
-begin
-  Normalize;
-  Par.Normalize;
-  if FSymb <> Par.FSymb then
-  begin
-    Exit(Self);
-  end;
-  F := False;
-  a := FNumL.Count;
-  b := Par.FNumL.Count;
-  n := Max(a, b);
-  for i := 0 to n - 1 do
-  begin
-    if i >= a then
-    begin
-      FNumL.Add(False);
-    end;
-    P := FNumL[i];
-    if i >= b then
-    begin
-      Q := False;
-    end
-    else
-    begin
-      Q := Par.FNumL[i];
-    end;
-    X := P xor Q xor F;
-    Y := (P and Q) or (Q and F) or (F and P);
-    FNumL[i] := X;
-    F := Y;
-  end;
-  if F then
-  begin
-    FNumL.Add(True);
-  end;
-  Normalize;
-  Exit(Self);
-end;
-
-function TLongInteger.SameSignSub(Par: TLongInteger): TLongInteger;
-var
-  F, X, Y, P, Q: Boolean;
-  a, b, n: Integer;
-  i: Integer;
-  G: Boolean;
-begin
-  Normalize;
-  Par.Normalize;
-  if FSymb <> Par.FSymb then
-  begin
-    Exit(Self);
-  end;
-  if Equal(Par) then
-  begin
-    Zero;
-    Exit(Self);
-  end;
-  F := False;
-  a := FNumL.Count;
-  b := Par.FNumL.Count;
-  n := Max(a, b);
-  if GreaterThan(Par) then
-  begin
-    G := True;
-  end
-  else
-  begin
-    G := False;
-    FSymb := not FSymb;
-  end;
-  for i := 0 to n - 1 do
-  begin
-    if not G then
-    begin
-      if i >= a then
-      begin
-        FNumL.Add(False);
-      end;
-      Q := FNumL[i];
-      if i >= b then
-      begin
-        P := False;
-      end
-      else
-      begin
-        P := Par.FNumL[i];
-      end;
-    end
-    else
-    begin
-      if i >= a then
-      begin
-        FNumL.Add(False);
-      end;
-      P := FNumL[i];
-      if i >= b then
-      begin
-        Q := False;
-      end
-      else
-      begin
-        Q := Par.FNumL[i];
-      end;
-    end;
-    X := P xor Q xor F;
-    Y := (not P and Q) or (Q and F) or (F and not P);
-    FNumL[i] := X;
-    F := Y;
-  end;
-  Normalize;
   Exit(Self);
 end;
 
 function TLongInteger.ShiftL(Shift: Integer): TLongInteger;
 var
-  AList: TList<Boolean>;
+  AList: TArray<Boolean>;
   i: Integer;
 begin
   if Shift <= 0 then
   begin
     Exit(Self);
   end;
-  AList := TList<Boolean>.Create;
-  try
-    AList.Count := Shift;
-    for i := 0 to Shift - 1 do
-    begin
-      AList[i] := False;
-    end;
-    FNumL.InsertRange(0, AList);
-  finally
-    FreeAndNil(AList);
+  SetLength(AList, Shift);
+  for i := 0 to Shift - 1 do
+  begin
+    AList[i] := False;
   end;
+  Insert(AList, FNumL, 0);
   Normalize;
   Exit(Self);
 end;
@@ -1923,11 +1773,14 @@ begin
   begin
     Exit(Self);
   end;
-  if FNumL.Count <= Shift then
+  if Length(FNumL) <= Shift then
   begin
     Zero;
+  end
+  else
+  begin
+    Delete(FNumL, 0, Shift);
   end;
-  FNumL.DeleteRange(0, Shift);
   Normalize;
   Exit(Self);
 end;
@@ -1945,13 +1798,11 @@ begin
   end
   else if FSymb = Par.FSymb then
   begin
-    SameSignSub(Par);
+    AbsSub(Par);
   end
   else
   begin
-    FSymb := not FSymb;
-    SameSignAdd(Par);
-    FSymb := not FSymb;
+    AbsAdd(Par);
   end;
   Exit(Self);
 end;
@@ -1962,48 +1813,74 @@ var
   i, l: Integer;
   n: Byte;
 begin
-  FNumL.Delete(FNumL.Count - 1); // 删除首位以确保算法一致
-  if FNumL.Count mod 8 <> 0 then
-  begin
-    SetLength(bs, 0);
-    Exit(bs);
-  end;
-  l := FNumL.Count div 8;
+  l := (Length(FNumL) - 1) div 8 + 1;
   SetLength(bs, l);
   for i := 0 to l - 1 do
   begin
     n := 0;
-    if FNumL[8 * i] then
+    if (8 * i < Length(FNumL)) and FNumL[8 * i] then
     begin
       n := n + 1;
     end;
-    if FNumL[8 * i + 1] then
+    if (8 * i + 1 < Length(FNumL)) and FNumL[8 * i + 1] then
     begin
       n := n + 2;
     end;
-    if FNumL[8 * i + 2] then
+    if (8 * i + 2 < Length(FNumL)) and FNumL[8 * i + 2] then
     begin
       n := n + 4;
     end;
-    if FNumL[8 * i + 3] then
+    if (8 * i + 3 < Length(FNumL)) and FNumL[8 * i + 3] then
     begin
       n := n + 8;
     end;
-    if FNumL[8 * i + 4] then
+    if (8 * i + 4 < Length(FNumL)) and FNumL[8 * i + 4] then
     begin
       n := n + 16;
     end;
-    if FNumL[8 * i + 5] then
+    if (8 * i + 5 < Length(FNumL)) and FNumL[8 * i + 5] then
     begin
       n := n + 32;
     end;
-    if FNumL[8 * i + 6] then
+    if (8 * i + 6 < Length(FNumL)) and FNumL[8 * i + 6] then
     begin
       n := n + 64;
     end;
-    if FNumL[8 * i + 7] then
+    if (8 * i + 7 < Length(FNumL)) and FNumL[8 * i + 7] then
     begin
       n := n + 128;
+    end;
+    bs[i] := n;
+  end;
+  Exit(bs);
+end;
+
+function TLongInteger.ToBytes16: TBytes;
+var
+  bs: TBytes;
+  i, l: Integer;
+  n: Byte;
+begin
+  l := (Length(FNumL) - 1) div 4 + 1;
+  SetLength(bs, l);
+  for i := 0 to l - 1 do
+  begin
+    n := 0;
+    if (4 * i < Length(FNumL)) and FNumL[4 * i] then
+    begin
+      n := n + 1;
+    end;
+    if (4 * i + 1 < Length(FNumL)) and FNumL[4 * i + 1] then
+    begin
+      n := n + 2;
+    end;
+    if (4 * i + 2 < Length(FNumL)) and FNumL[4 * i + 2] then
+    begin
+      n := n + 4;
+    end;
+    if (4 * i + 3 < Length(FNumL)) and FNumL[4 * i + 3] then
+    begin
+      n := n + 8;
     end;
     bs[i] := n;
   end;
@@ -2016,7 +1893,7 @@ var
   s: string;
   Par, ModVal: TLongInteger;
 begin
-  if FNumL.Count = 0 then
+  if Length(FNumL) = 0 then
   begin
     Exit('0');
   end;
@@ -2049,27 +1926,27 @@ var
   i: Integer;
   n: Byte;
 begin
-  if FNumL.Count = 0 then
+  if Length(FNumL) = 0 then
   begin
     Exit('0');
   end;
   s := '';
-  for i := 0 to (FNumL.Count - 1) div 4 do
+  for i := 0 to (Length(FNumL) - 1) div 4 do
   begin
     n := 0;
-    if (4 * i + 3 < FNumL.Count) and (FNumL[4 * i + 3]) then
+    if (4 * i + 3 < Length(FNumL)) and (FNumL[4 * i + 3]) then
     begin
       Inc(n, 8);
     end;
-    if (4 * i + 2 < FNumL.Count) and (FNumL[4 * i + 2]) then
+    if (4 * i + 2 < Length(FNumL)) and (FNumL[4 * i + 2]) then
     begin
       Inc(n, 4);
     end;
-    if (4 * i + 1 < FNumL.Count) and (FNumL[4 * i + 1]) then
+    if (4 * i + 1 < Length(FNumL)) and (FNumL[4 * i + 1]) then
     begin
       Inc(n, 2);
     end;
-    if (4 * i < FNumL.Count) and (FNumL[4 * i]) then
+    if (4 * i < Length(FNumL)) and (FNumL[4 * i]) then
     begin
       Inc(n, 1);
     end;
@@ -2087,7 +1964,7 @@ var
   s: string;
   i: Integer;
 begin
-  if FNumL.Count = 0 then
+  if Length(FNumL) = 0 then
   begin
     Exit('0');
   end;
@@ -2095,7 +1972,7 @@ begin
   begin
     s := '-';
   end;
-  for i := FNumL.Count - 1 downto 0 do
+  for i := Length(FNumL) - 1 downto 0 do
   begin
     if FNumL[i] then
     begin
@@ -2111,8 +1988,8 @@ end;
 
 function TLongInteger.Zero: TLongInteger;
 begin
-  FNumL.Clear;
-  FNumL.Add(False);
+  SetLength(FNumL, 1);
+  FNumL[0] := False;
   FSymb := True;
   Exit(Self);
 end;
@@ -2368,7 +2245,7 @@ begin
   Result.FHex := Hex1.FHex;
 end;
 
-function THexInt.Power(Hex1: THexInt): THexInt;
+function THexInt.Power(const Hex1: THexInt): THexInt;
 var
   LI1, LI2: TLongInteger;
 begin
@@ -2377,32 +2254,14 @@ begin
   try
     LI1.FromString16(FHex);
     LI2.FromString16(Hex1.FHex);
-    Result.FHex := LI1.Power(LI2).ToString16;
+    Result.FHex := LI1.PowerFFT(LI2).ToString16;
   finally
     FreeAndNil(LI1);
     FreeAndNil(LI2);
   end;
 end;
 
-function THexInt.PowerMod(Hex1, Hex2: THexInt): THexInt;
-var
-  LI1, LI2, LI3: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  LI3 := TLongInteger.Create;
-  try
-    LI1.FromString16(FHex);
-    LI2.FromString16(Hex1.FHex);
-    LI3.FromString16(Hex2.FHex);
-    Result.FHex := LI1.PowerMod(LI2, LI3).ToString16;
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-function THexInt.PowerModFFT(Hex1, Hex2: THexInt): THexInt;
+function THexInt.PowerMod(const Hex1, Hex2: THexInt): THexInt;
 var
   LI1, LI2, LI3: TLongInteger;
 begin
@@ -2612,6 +2471,20 @@ begin
   Exit(False);
 end;
 
+function TLongReal.FromInteger(Coe, Exp: Integer): TLongReal;
+begin
+  FCoe.FromInteger(Coe);
+  FExp.FromInteger(Exp);
+  Exit(Self);
+end;
+
+function TLongReal.FromInteger(Coe, Exp: Int64): TLongReal;
+begin
+  FCoe.FromInteger(Coe);
+  FExp.FromInteger(Exp);
+  Exit(Self);
+end;
+
 function TLongReal.FromStringOri(Str: string): Boolean;
 var
   SS: TArray<string>;
@@ -2707,7 +2580,7 @@ end;
 
 function TLongReal.Multiply(Par: TLongReal): TLongReal;
 begin
-  FCoe.Multiply(Par.FCoe);
+  FCoe.MultiplyFFT(Par.FCoe);
   FExp.Add(Par.FExp);
   Normalize;
   Exit(Self);
@@ -2754,6 +2627,30 @@ begin
   Exit(Self);
 end;
 
+function TLongReal.Round(LI: TLongInteger): TLongInteger;
+var
+  LRA, LRB: TLongReal;
+begin
+  LRA := TLongReal.Create;
+  LRB := TLongReal.Create;
+  try
+    LRA.FCoe.CopyVal(Trunc(LI));
+    LRA.FExp.FromInteger(0);
+    LRA.Subtract(Self).Positive;
+    LI.Positive;
+    LRB.FromInteger(5, -1);
+    if (LRA.Equal(LRB) and LI.IsOdd) or LRA.GreaterThan(LRB) then
+    begin
+      LI.Increase;
+    end;
+    LI.FSymb := FCoe.FSymb;
+  finally
+    FreeAndNil(LRA);
+    FreeAndNil(LRB);
+  end;
+  Exit(LI);
+end;
+
 function TLongReal.Subtract(Par: TLongReal): TLongReal;
 var
   N: TLongInteger;
@@ -2786,6 +2683,28 @@ begin
   Exit(Format('%se%s', [FCoe.ToString10, FExp.ToString10]));
 end;
 
+function TLongReal.Trunc(LI: TLongInteger): TLongInteger;
+var
+  LIA: TLongInteger;
+begin
+  LIA := TLongInteger.Create;
+  try
+    LI.CopyVal(FCoe);
+    LIA.CopyVal(FExp).Positive;
+    if not FExp.FSymb then
+    begin
+      LI.Div10PowN(LIA);
+    end
+    else
+    begin
+      LI.Mut10PowN(LIA);
+    end;
+  finally
+    FreeAndNil(LIA);
+  end;
+  Exit(LI);
+end;
+
 function TLongReal.Zero: TLongReal;
 begin
   FCoe.Zero;
@@ -2793,4 +2712,879 @@ begin
   Exit(Self);
 end;
 
+{ TBigInteger }
+
+function TBigInteger.AbsAdd(const Par: TBigInteger): TBigInteger;
+var
+  Value, Carry, A, B: Byte;
+  Temp: Word;
+  i, l, l0: Integer;
+begin
+  Normalize;
+  Par.Normalize;
+  l0 := Length(FNumbers);
+  l := Max(l0, Length(Par.FNumbers)) + 1;
+  SetLength(FNumbers, l);
+  Carry := 0;
+  for i := 0 to l - 1 do
+  begin
+    if i < l0 then
+    begin
+      A := FNumbers[i];
+    end
+    else
+    begin
+      A := 0;
+    end;
+    if i < Length(Par.FNumbers) then
+    begin
+      B := Par.FNumbers[i];
+    end
+    else
+    begin
+      B := 0;
+    end;
+    Temp := A + B + Carry;
+    Value := Temp and 255;
+    Carry := Temp shr 8;
+    FNumbers[i] := Value;
+  end;
+  Normalize;
+  Exit(Self);
+end;
+
+function TBigInteger.AbsGreater(const Par: TBigInteger): Boolean;
+var
+  i: Integer;
+begin
+  Normalize;
+  Par.Normalize;
+  if Length(FNumbers) > Length(Par.FNumbers) then
+  begin
+    Exit(True);
+  end;
+  if Length(FNumbers) < Length(Par.FNumbers) then
+  begin
+    Exit(False);
+  end;
+  for i := Length(FNumbers) - 1 downto 0 do if FNumbers[i] > Par.FNumbers[i] then
+  begin
+    Exit(True);
+  end
+  else if FNumbers[i] < Par.FNumbers[i] then
+  begin
+    Exit(False);
+  end;
+  Exit(False);
+end;
+
+function TBigInteger.AbsLess(const Par: TBigInteger): Boolean;
+var
+  i: Integer;
+begin
+  Normalize;
+  Par.Normalize;
+  if Length(FNumbers) < Length(Par.FNumbers) then
+  begin
+    Exit(True);
+  end;
+  if Length(FNumbers) > Length(Par.FNumbers) then
+  begin
+    Exit(False);
+  end;
+  for i := Length(FNumbers) - 1 downto 0 do if FNumbers[i] < Par.FNumbers[i] then
+  begin
+    Exit(True);
+  end
+  else if FNumbers[i] > Par.FNumbers[i] then
+  begin
+    Exit(False);
+  end;
+  Exit(False);
+end;
+
+function TBigInteger.AbsoluteVal: TBigInteger;
+begin
+  Normalize;
+  FSign := True;
+  Exit(Self);
+end;
+
+function TBigInteger.AbsSub(const Par: TBigInteger): TBigInteger;
+var
+  Value, Carry, A, B: Byte;
+  i, l, l0: Integer;
+begin
+  Normalize;
+  Par.Normalize;
+  l0 := Length(FNumbers);
+  l := Max(l0, Length(Par.FNumbers));
+  SetLength(FNumbers, l);
+  Carry := 0;
+  for i := 0 to l - 1 do
+  begin
+    if i < l0 then
+    begin
+      A := FNumbers[i];
+    end
+    else
+    begin
+      A := 0;
+    end;
+    if i < Length(Par.FNumbers) then
+    begin
+      B := Par.FNumbers[i];
+    end
+    else
+    begin
+      B := 0;
+    end;
+    if A > B + Carry then
+    begin
+      Value := A - B - Carry;
+      Carry := 0;
+    end
+    else
+    begin
+      Value := 256 + A - B - Carry;
+      Carry := 1;
+    end;
+    FNumbers[i] := Value;
+  end;
+  if Carry = 1 then
+  begin
+    FSign := not FSign;
+    FNumbers[0] := 256 - FNumbers[0];
+    for i := 1 to l - 1 do
+    begin
+      FNumbers[i] := not FNumbers[i];
+    end;
+  end;
+  Normalize;
+  Exit(Self);
+end;
+
+function TBigInteger.Add(Par: TBigInteger): TBigInteger;
+begin
+  if FSign = Par.FSign then
+  begin
+    Exit(AbsAdd(Par));
+  end
+  else
+  begin
+    Exit(AbsSub(Par));
+  end;
+end;
+
+function TBigInteger.CopyValue(const Par: TBigInteger): TBigInteger;
+begin
+  Par.Normalize;
+  FSign := Par.FSign;
+  FNumbers := Copy(Par.FNumbers, 0, Length(Par.FNumbers));
+  Exit(Self);
+end;
+
+constructor TBigInteger.Create;
+begin
+  FSign := True;
+  SetLength(FNumbers, 1);
+  FNumbers[0] := 0;
+end;
+
+constructor TBigInteger.Create(N: Byte);
+begin
+  FSign := True;
+  SetLength(FNumbers, 1);
+  FNumbers[0] := N;
+end;
+
+constructor TBigInteger.Create(N: Word);
+begin
+  FSign := True;
+  SetLength(FNumbers, 2);
+  FNumbers[0] := N and 255;
+  FNumbers[1] := N shr 8;
+end;
+
+constructor TBigInteger.Create(N: Cardinal);
+begin
+  FSign := True;
+  SetLength(FNumbers, 4);
+  FNumbers[0] := N and 255;
+  FNumbers[1] := (N shr 8) and 255;
+  FNumbers[2] := (N shr 16) and 255;
+  FNumbers[3] := N shr 24;
+end;
+
+constructor TBigInteger.Create(N: Integer);
+begin
+  FSign := N > 0;
+  N := Abs(N);
+  SetLength(FNumbers, 4);
+  FNumbers[0] := N and 255;
+  FNumbers[1] := (N shr 8) and 255;
+  FNumbers[2] := (N shr 16) and 255;
+  FNumbers[3] := N shr 24;
+end;
+
+constructor TBigInteger.Create(N: Int64);
+begin
+  FSign := N > 0;
+  N := Abs(N);
+  SetLength(FNumbers, 8);
+  FNumbers[0] := N and 255;
+  FNumbers[1] := (N shr 8) and 255;
+  FNumbers[2] := (N shr 16) and 255;
+  FNumbers[3] := (N shr 24) and 255;
+  FNumbers[4] := (N shr 32) and 255;
+  FNumbers[5] := (N shr 40) and 255;
+  FNumbers[6] := (N shr 48) and 255;
+  FNumbers[7] := N shr 56;
+end;
+
+constructor TBigInteger.Create(const BI: TBigInteger);
+begin
+  FSign := BI.FSign;
+  FNumbers := Copy(BI.FNumbers, 0, Length(BI.FNumbers));
+end;
+
+function TBigInteger.Divide(const Par: TBigInteger): TBigInteger;
+begin
+  Exit(DivideBase(Par));
+end;
+
+function TBigInteger.DivideBase(const Par: TBigInteger; const Module: TBigInteger): TBigInteger;
+var
+  l, i, n: Integer;
+  Temp, Dividend: TBigInteger;
+begin
+  Normalize;
+  Par.Normalize;
+  FSign := FSign = Par.FSign;
+  l := Length(FNumbers) - Length(Par.FNumbers) + 1;
+  if l < 1 then
+  begin
+    if Module <> nil then
+    begin
+      Module.CopyValue(Self);
+    end;
+    Exit(Zero);
+  end;
+  Temp := TBigInteger.Create;
+  Dividend := TBigInteger.Create;
+  try
+    Dividend.CopyValue(Self);
+    SetLength(FNumbers, l);
+    Temp.CopyValue(Par).ShiftL(l - 1);
+    for i := l - 1 downto 0 do
+    begin
+      n := 0;
+      while Dividend.GreaterThan(Temp) do
+      begin
+        Dividend.AbsSub(Temp);
+        Inc(n);
+      end;
+      FNumbers[i] := n;
+      Temp.ShiftR(1);
+    end;
+    if Module <> nil then
+    begin
+      Module.CopyValue(Dividend);
+    end;
+  finally
+    FreeAndNil(Temp);
+    FreeAndNil(Dividend);
+  end;
+  Exit(Self);
+end;
+
+function TBigInteger.Equal(const Par: TBigInteger): Boolean;
+var
+  i: Integer;
+begin
+  Normalize;
+  Par.Normalize;
+  if FSign <> Par.FSign then
+  begin
+    Exit(False);
+  end;
+  for i := 0 to Length(FNumbers) - 1 do  if FNumbers[i] <> Par.FNumbers[i] then
+  begin
+    Exit(False);
+  end;
+  Exit(True);
+end;
+
+function TBigInteger.FromString16(Str: string): Boolean;
+var
+  i, l: Integer;
+begin
+  if Str = '' then
+  begin
+    Exit(False);
+  end;
+  Str := UpperCase(Str);
+  l := Str.Length;
+  if Str.Chars[0] = '-' then
+  begin
+    if l <= 1 then
+    begin
+      Exit(False);
+    end;
+    for i := 1 to l - 1 do if GetHexVal(Str.Chars[i]) = 255 then
+    begin
+      Exit(False);
+    end;
+    FSign := False;
+    SetLength(FNumbers, l div 2);
+    for i := 0 to l div 2 - 1 do
+    begin
+      if 2 * i > l - 2 then
+      begin
+        FNumbers[i] := GetHexVal(Str.Chars[l - 1 - 2 * i]);
+      end
+      else
+      begin
+        FNumbers[i] := GetHexVal(Str.Chars[l - 1 - 2 * i]) + 16 * GetHexVal(Str.Chars[l - 2 - 2 * i]);
+      end;
+    end;
+  end
+  else
+  begin
+    if l <= 0 then
+    begin
+      Exit(False);
+    end;
+    for i := 0 to l - 1 do
+    begin
+      if GetHexVal(Str.Chars[i]) = 255 then
+      begin
+        Exit(False);
+      end;
+    end;
+    FSign := True;
+    SetLength(FNumbers, (l + 1) div 2);
+    for i := 0 to (l + 1) div 2 - 1 do
+    begin
+      if 2 * i > l - 1 then
+      begin
+        FNumbers[i] := GetHexVal(Str.Chars[l - 1 - 2 * i]);
+      end
+      else
+      begin
+        FNumbers[i] := GetHexVal(Str.Chars[l - 1 - 2 * i]) + 16 * GetHexVal(Str.Chars[l - 2 - 2 * i]);
+      end;
+    end;
+  end;
+  Normalize;
+  Exit(True);
+end;
+
+function TBigInteger.GreaterThan(const Par: TBigInteger): Boolean;
+begin
+  Normalize;
+  Par.Normalize;
+  if FSign and not Par.FSign then
+  begin
+    Exit(True);
+  end
+  else if not FSign and Par.FSign then
+  begin
+    Exit(False);
+  end
+  else if FSign and Par.FSign then
+  begin
+    Exit(AbsGreater(Par));
+  end
+  else
+  begin
+    Exit(AbsLess(Par));
+  end;   
+  Exit(False);
+end;
+
+function TBigInteger.IsEven: Boolean;
+begin
+  Exit((Length(FNumbers) > 0) and (FNumbers[0] and 1 = 0));
+end;
+
+function TBigInteger.IsOdd: Boolean;
+begin
+  Exit((Length(FNumbers) > 0) and (FNumbers[0] and 1 = 1));
+end;
+
+function TBigInteger.IsZero: Boolean;
+var
+  i: Integer;
+begin
+  for i := Length(FNumbers) - 1 downto 0 do if FNumbers[i] <> 0 then
+  begin
+    Exit(False);
+  end;
+  Exit(True);
+end;
+
+function TBigInteger.LessThan(const Par: TBigInteger): Boolean;
+begin
+  Normalize;
+  Par.Normalize;
+  if FSign and not Par.FSign then
+  begin
+    Exit(False);
+  end
+  else if not FSign and Par.FSign then
+  begin
+    Exit(True);
+  end
+  else if FSign and Par.FSign then
+  begin
+    Exit(AbsLess(Par));
+  end
+  else
+  begin
+    Exit(AbsGreater(Par));
+  end;
+  Exit(False);
+end;
+
+function TBigInteger.Module(const Par: TBigInteger): TBigInteger;
+var
+  Temp: TBigInteger;
+begin
+  Temp := TBigInteger.Create;
+  try
+    DivideBase(Par, Temp).CopyValue(Temp);
+  finally
+    FreeAndNil(Temp);
+  end;
+  Exit(Self);
+end;
+
+function TBigInteger.MultiplyDNC(const Par: TBigInteger; const Devided: Boolean): TBigInteger;
+var
+  ALI, BLI, CLI, DLI, XLI, YLI: TBigInteger;
+  i, n: Integer;
+  S: Boolean;
+begin
+  Normalize;
+  Par.Normalize;
+  if IsZero or Par.IsZero then
+  begin
+    Zero;
+    Exit(Self);
+  end;
+  if (Length(FNumbers) shl 1 <= Length(Par.FNumbers)) or (Length(Par.FNumbers) shl 1 <= Length(FNumbers)) then
+  begin
+    Exit(MultiplyBase(Par));
+  end;
+  ALI := TBigInteger.Create;
+  BLI := TBigInteger.Create;
+  CLI := TBigInteger.Create;
+  DLI := TBigInteger.Create;
+  XLI := TBigInteger.Create;
+  YLI := TBigInteger.Create;
+  try
+    S := FSign = Par.FSign;
+    if Length(FNumbers) < Length(Par.FNumbers) then
+    begin
+      n := (Length(Par.FNumbers) + 1) shr 1;
+    end
+    else
+    begin
+      n := (Length(FNumbers) + 1) shr 1;
+    end;
+    SetLength(ALI.FNumbers, n);
+    SetLength(BLI.FNumbers, n);
+    SetLength(CLI.FNumbers, n);
+    SetLength(DLI.FNumbers, n);
+    for i := 0 to n - 1 do
+    begin
+      if i < Length(FNumbers) then
+      begin
+        BLI.FNumbers[i] := FNumbers[i];
+      end
+      else
+      begin
+        BLI.FNumbers[i] := 0;
+      end;
+      if i < Length(Par.FNumbers) then
+      begin
+        DLI.FNumbers[i] := Par.FNumbers[i];
+      end
+      else
+      begin
+        DLI.FNumbers[i] := 0;
+      end;
+    end;
+    for i := n to n shl 1 do
+    begin
+      if i < Length(FNumbers) then
+      begin
+        ALI.FNumbers[i - n] := FNumbers[i];
+      end
+      else
+      begin
+        ALI.FNumbers[i - n] := 0;
+      end;
+      if i < Length(Par.FNumbers) then
+      begin
+        CLI.FNumbers[i - n] := Par.FNumbers[i];
+      end
+      else
+      begin
+        CLI.FNumbers[i - n] := 0;
+      end;
+    end;
+    if Devided then
+    begin
+      XLI.CopyValue(ALI).MultiplyBase(CLI);
+      YLI.CopyValue(BLI).MultiplyBase(DLI);
+      CopyValue(ALI.Subtract(BLI)).MultiplyBase(DLI.Subtract(CLI)).Add(XLI)
+        .Add(YLI).ShiftL(n).Add(YLI).Add(XLI.ShiftL(n shl 1));
+    end
+    else
+    begin
+      XLI.CopyValue(ALI).MultiplyDNC(CLI, True);
+      YLI.CopyValue(BLI).MultiplyDNC(DLI, True);
+      CopyValue(ALI.Subtract(BLI)).MultiplyDNC(DLI.Subtract(CLI), True).Add(XLI)
+        .Add(YLI).ShiftL(n).Add(YLI).Add(XLI.ShiftL(n shl 1));
+    end;
+  finally
+    FreeAndNil(ALI);
+    FreeAndNil(BLI);
+    FreeAndNil(CLI);
+    FreeAndNil(DLI);
+    FreeAndNil(XLI);
+    FreeAndNil(YLI);
+  end;
+  FSign := S;
+  Normalize;
+  Exit(Self);
+end;
+
+function TBigInteger.MultiplyBase(const Par: TBigInteger): TBigInteger;
+var
+  i, j, l, l1, l2: Integer;
+  TempArray: TArray<Byte>;
+  Temp: Word;
+  Carry, Value: Byte;
+begin
+  Normalize;
+  Par.Normalize;
+  FSign := FSign = Par.FSign;
+  l1 := Length(FNumbers);
+  l2 := Length(Par.FNumbers);
+  SetLength(TempArray, l1);
+  for i := 0 to l1 - 1 do
+  begin
+    TempArray[i] := FNumbers[i];
+    FNumbers[i] := 0;
+  end;
+  l := l1 + Length(Par.FNumbers) - 1;
+  SetLength(FNumbers, l);
+  for i := 0 to l1 - 1 do
+  begin
+    Carry := 0;
+    for j := 0 to l2 - 1 do
+    begin
+      Temp := TempArray[i] * Par.FNumbers[j] + FNumbers[i + j] + Carry;
+      Value := Temp and 255;
+      Carry := Temp shr 8;
+      FNumbers[i + j] := Value;
+    end;
+    FNumbers[i + l2] := Carry;
+  end;
+  Normalize;
+  Exit(Self);
+end;
+
+function TBigInteger.MultiplyFFT(const Par: TBigInteger): TBigInteger;
+var
+  Bit, NumLength, i: Integer;
+  RevList: TArray<Integer>;
+  ComplexA, ComplexB: TArray<TComplex>;
+  S: Boolean;
+begin
+  Normalize;
+  Par.Normalize;
+  if IsZero or Par.IsZero then
+  begin
+    Zero;
+    Exit(Self);
+  end;
+  S := not (FSign xor Par.FSign);
+  Bit := 1;
+  NumLength := 2;
+  while (1 shl bit) < Length(FNumbers) + Length(Par.FNumbers) - 1 do
+  begin
+    NumLength := NumLength shl 1;
+    Bit := Bit + 1;
+  end;
+  SetLength(ComplexA, NumLength);
+  SetLength(ComplexB, NumLength);
+  GetReverseList(RevList, Bit);
+  FFTBytes(FNumbers, ComplexA, RevList, NumLength);
+  FFTBytes(Par.FNumbers, ComplexB, RevList, NumLength);
+  for i := 0 to NumLength - 1 do
+  begin
+    ComplexA[i] := ComplexA[i] * ComplexB[i];
+  end;
+  IFFTBytes(FNumbers, ComplexA, RevList, NumLength);
+  FSign := S;
+  Normalize;
+  Exit(Self);
+end;
+
+function TBigInteger.Negative: TBigInteger;
+begin
+  Normalize;
+  FSign := not FSign;
+  Exit(Self);
+end;
+
+function TBigInteger.Normalize: TBigInteger;
+var
+  i, l: Integer;
+begin
+  l := Length(FNumbers);
+  for i := l downto 0 do
+  begin
+    if (i > 0) and (FNumbers[i - 1] > 0) then
+    begin
+      SetLength(FNumbers, i);
+      Break;
+    end
+    else if i = 0 then
+    begin
+      Zero;
+    end;
+  end;
+  Exit(Self);
+end;
+
+function TBigInteger.Positive: TBigInteger;
+begin
+  Normalize;
+  Exit(Self);
+end;
+
+function TBigInteger.PowAndModBase(const Par, Module: TBigInteger): TBigInteger;
+var
+  Base, Power: TBigInteger;
+begin
+  if Par.IsZero or not Par.FSign then
+  begin
+    raise EPowerError.Create('Error Message: Power index must be greater than ZERO!');
+  end;
+  if Module.IsZero then
+  begin
+    raise EZeroError.Create('Error Message: Cannot divide ZERO!');
+  end;
+  Base := TBigInteger.Create(Self);
+  Power := TBigInteger.Create(Par);
+  SetLength(FNumbers, 1);
+  FNumbers[0] := 1;
+  try
+    while Power.FSign and not Power.IsZero do
+    begin
+      if Power.FNumbers[0] and 1 = 1 then
+      begin
+        MultiplyBase(Base).Module(Module);
+      end;
+      Power.ShiftR(1);
+      Base.MultiplyBase(Base).Module(Module);
+    end;
+  finally
+    Base.DisposeOf;
+    Power.DisposeOf;
+  end;
+  Exit(Self);
+end;
+
+function TBigInteger.PowAndModDNC(const Par, Module: TBigInteger): TBigInteger;
+var
+  Base, Power: TBigInteger;
+begin
+  if Par.IsZero or not Par.FSign then
+  begin
+    raise EPowerError.Create('Error Message: Power index must be greater than ZERO!');
+  end;
+  if Module.IsZero then
+  begin
+    raise EZeroError.Create('Error Message: Cannot divide ZERO!');
+  end;
+  Base := TBigInteger.Create(Self);
+  Power := TBigInteger.Create(Par);
+  SetLength(FNumbers, 1);
+  FNumbers[0] := 1;
+  try
+    while Power.FSign and not Power.IsZero do
+    begin
+      if Power.FNumbers[0] and 1 = 1 then
+      begin
+        MultiplyDNC(Base).Module(Module);
+      end;
+      Power.ShiftR(1);
+      Base.MultiplyDNC(Base).Module(Module);
+    end;
+  finally
+    Base.DisposeOf;
+    Power.DisposeOf;
+  end;
+  Exit(Self);
+end;
+
+function TBigInteger.PowAndModFFT(const Par, Module: TBigInteger): TBigInteger;
+var
+  Base, Power: TBigInteger;
+begin
+  if Par.IsZero or not Par.FSign then
+  begin
+    raise EPowerError.Create('Error Message: Power index must be greater than ZERO!');
+  end;
+  if Module.IsZero then
+  begin
+    raise EZeroError.Create('Error Message: Cannot divide ZERO!');
+  end;
+  Base := TBigInteger.Create(Self);
+  Power := TBigInteger.Create(Par);
+  SetLength(FNumbers, 1);
+  FNumbers[0] := 1;
+  try
+    while Power.FSign and not Power.IsZero do
+    begin
+      if Power.FNumbers[0] and 1 = 1 then
+      begin
+        MultiplyFFT(Base).Module(Module);
+      end;
+      Power.ShiftR(1);
+      Base.MultiplyFFT(Base).Module(Module);
+    end;
+  finally
+    Base.DisposeOf;
+    Power.DisposeOf;
+  end;
+  Exit(Self);
+end;
+
+function TBigInteger.ShiftL(const Value: Integer): TBigInteger;
+var
+  Temp: TArray<Byte>;
+begin
+  if Value > 0 then
+  begin
+    SetLength(Temp, Value);
+    Insert(Temp, FNumbers, 0);
+  end;
+  Exit(Self);
+end;
+
+function TBigInteger.ShiftR(const Value: Integer): TBigInteger;
+begin
+  if Value > 0 then
+  begin
+    Delete(FNumbers, 0, Value);
+  end;
+  Exit(Self);
+end;
+
+function TBigInteger.Subtract(const Par: TBigInteger): TBigInteger;
+begin
+  if FSign = Par.FSign then
+  begin
+    Exit(AbsSub(Par));
+  end
+  else
+  begin
+    Exit(AbsSub(Par));
+  end;
+end;
+
+function TBigInteger.Zero: TBigInteger;
+begin
+  SetLength(FNumbers, 1);
+  FNumbers[0] := 0;
+  Exit(Self);
+end;
+
+{ TComplex }
+
+class operator TComplex.Add(const C1, C2: TComplex): TComplex;
+var
+  A, B: Double;
+begin
+  A := C1.FM * Cos(C1.FA) + C2.FM * Cos(C2.FA);
+  B := C1.FM * Sin(C1.FA) + C2.FM * Sin(C2.FA);
+  Result.FM := Sqrt(A * A + B * B);
+  Result.FA := ArcTan2(B, A);
+end;
+
+function TComplex.Argument: Double;
+begin
+  Exit(FA);
+end;
+
+function TComplex.Conjugate: TComplex;
+begin
+  Result.FM := FM;
+  Result.FA := -FA;
+end;
+
+class function TComplex.Create(const Modulus, Argument: Double): TComplex;
+begin
+  Result.FM := Modulus;
+  Result.FA := Argument;
+end;
+
+class operator TComplex.Divide(const C1: TComplex; const C2: Double): TComplex;
+begin
+  Result.FM := C1.FM / C2;
+  Result.FA := C1.FA;
+end;
+
+class operator TComplex.Divide(const C1, C2: TComplex): TComplex;
+begin
+  Result.FM := C1.FM / C2.FM;
+  Result.FA := C1.FA - C2.FA;
+end;
+
+function TComplex.Imaginary: Double;
+begin
+  Exit(FM * Sin(FA));
+end;
+
+function TComplex.Modulus: Double;
+begin
+  Exit(FM);
+end;
+
+class operator TComplex.Multiply(const C1: TComplex; const C2: Double): TComplex;
+begin
+  Result.FM := C1.FM * C2;
+  Result.FA := C1.FA;
+end;
+
+class operator TComplex.Multiply(const C1, C2: TComplex): TComplex;
+begin
+  Result.FM := C1.FM * C2.FM;
+  Result.FA := C1.FA + C2.FA;
+end;
+
+function TComplex.Real: Double;
+begin
+  Exit(FM * Cos(FA));
+end;
+
+class operator TComplex.Subtract(const C1, C2: TComplex): TComplex;
+var
+  A, B: Double;
+begin
+  A := C1.FM * Cos(C1.FA) - C2.FM * Cos(C2.FA);
+  B := C1.FM * Sin(C1.FA) - C2.FM * Sin(C2.FA);
+  Result.FM := Sqrt(A * A + B * B);
+  Result.FA := ArcTan2(B, A);
+end;
+
 end.
+
+

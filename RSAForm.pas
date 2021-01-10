@@ -262,7 +262,7 @@ begin
   end;
   if RSATE.LessThan(RSAN) and not RSAE.IsZero then
   begin
-    RSATE.PowerMod(RSAE, RSAN);
+    RSATE.PowerModFFT(RSAE, RSAN);
     case ComboBox2.ItemIndex of
       0: Memo1.Text := RSATE.ToString16;
       1: Memo1.Text := RSATE.ToString10;
@@ -288,7 +288,7 @@ begin
   end;
   if RSATE.LessThan(RSAN) and not RSAD.IsZero then
   begin
-    RSATE.PowerMod(RSAD, RSAN);
+    RSATE.PowerModFFT(RSAD, RSAN);
     case ComboBox4.ItemIndex of
       0: Memo1.Text := RSATE.ToString16;
       1: Memo1.Text := RSATE.ToString10;
@@ -390,6 +390,10 @@ begin
   else if ComboBoxLang.ItemIndex = 1 then
   begin
     LoadLangFromStrings(Lang.LangStr['sc']);
+  end
+  else if ComboBoxLang.ItemIndex = 2 then
+  begin
+    LoadLangFromStrings(Lang.LangStr['en']);
   end;
 end;
 
@@ -406,6 +410,8 @@ begin
 end;
 
 procedure TRSATest.FormCreate(Sender: TObject);
+var
+  ID: LangID;
 begin
   RSATest.Caption := 'R. de E. M. RSA Tool v' + GetBuildInfo;
   Prime1 := TLongInteger.Create;
@@ -416,7 +422,21 @@ begin
   RSAN := TLongInteger.Create;
   RSATE := TLongInteger.Create;
   PrimeL := PrimeNumbersGenerate(32);
-  LoadLangFromStrings(Lang.LangStr['tc']);
+  ID := GetSystemDefaultLangID;
+  case ID of
+    $1404, $0404, $0C04: 
+    begin
+      LoadLangFromStrings(Lang.LangStr['tc']);
+      ComboBoxLang.ItemIndex := 0;
+    end;
+    $1004, $0804:  
+    begin    
+      LoadLangFromStrings(Lang.LangStr['sc']); 
+      ComboBoxLang.ItemIndex := 1;
+    end
+  else
+    LoadLangFromStrings(Lang.LangStr['en']);
+  end;
 end;
 
 procedure TRSATest.ThreadOnTerminate(Sender: TObject);

@@ -48,7 +48,6 @@ var
   s: string;
   t1, t2: Integer;
 begin
-  t1 := TThread.GetTickCount;
   Memo1.Lines.Clear;
   LI1.DecValue := Edit1.Text;
   LI2.DecValue := Edit2.Text;
@@ -59,9 +58,12 @@ begin
   LI4 := LI1 - LI2;
   s := Format('%s - %s = %s', [LI1.DecValue, LI2.DecValue, LI4.DecValue]);
   Memo1.Lines.Add(s);
+  t1 := TThread.GetTickCount;
   LI4 := LI1 * LI2;
   s := Format('%s * %s = %s', [LI1.DecValue, LI2.DecValue, LI4.DecValue]);
   Memo1.Lines.Add(s);
+  t2 := TThread.GetTickCount;
+  Memo1.Lines.Add(Format('FFT Time: %d', [t2 - t1]));
   try
     LI4 := LI1 div LI2;
     LI5 := LI1 mod LI2;
@@ -74,9 +76,12 @@ begin
     end;
   end;
   try
+    t1 := TThread.GetTickCount;
     LI4 := LI1.PowerMod(LI2, LI3);
     s := Format('%s ^ %s %% %s = %s', [LI1.DecValue, LI2.DecValue, LI3.DecValue, LI4.DecValue]);
     Memo1.Lines.Add(s);
+    t2 := TThread.GetTickCount;
+    Memo1.Lines.Add(Format('FFT Time: %d', [t2 - t1]));
   Except
     on EZeroError do
     begin
@@ -87,8 +92,6 @@ begin
       Memo1.Lines.Add('Error Message: Power index must be greater than ZERO!');
     end;
   end;
-  t2 := TThread.GetTickCount;
-  Memo1.Lines.Add(Format('Time: %d', [t2 - t1]));
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
@@ -148,7 +151,7 @@ begin
     end;
   end;
   t2 := TThread.GetTickCount;
-  Memo1.Lines.Add(Format('Time: %d', [t2 - t1]));
+  Memo1.Lines.Add(Format('FFT Time: %d', [t2 - t1]));
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
