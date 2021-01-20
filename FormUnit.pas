@@ -27,7 +27,6 @@ type
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     { Private declarations }
   public
@@ -36,7 +35,7 @@ type
 
 var
   Form1: TForm1;
-  PrimeL: TObjectList<TLongInteger>;
+  PrimeL: TArray<TLongInteger>;
 
 implementation
 
@@ -77,7 +76,7 @@ begin
   end;
   try
     t1 := TThread.GetTickCount;
-    LI4 := LI1.PowerMod(LI2, LI3);
+    LI4 := LI1.PowAndMod(LI2, LI3);
     s := Format('%s ^ %s %% %s = %s', [LI1.DecValue, LI2.DecValue, LI3.DecValue, LI4.DecValue]);
     Memo1.Lines.Add(s);
     t2 := TThread.GetTickCount;
@@ -95,16 +94,9 @@ begin
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
-var
-  SL: TStringList;
 begin
   Memo1.Lines.Clear;
-  SL := PrimeNumbersGenerate16(StrToIntDef(Edit4.Text, 0));
-  try
-    Memo1.Lines.Text := SL.Text;
-  finally
-    FreeAndNil(SL);
-  end;
+  Memo1.Lines.AddStrings(PrimeNumbersGenerate16(StrToIntDef(Edit4.Text, 0)));
 end;
 
 procedure TForm1.Button3Click(Sender: TObject);
@@ -145,18 +137,13 @@ begin
   begin
     LI := GetRandomPrimeNumber(Count, PrimeL);
     try
-      Memo1.Lines.Add(LI.ToString10);
+      Memo1.Lines.Add(LI.ToString16);
     finally
       LI.Free;
     end;
   end;
   t2 := TThread.GetTickCount;
   Memo1.Lines.Add(Format('FFT Time: %d', [t2 - t1]));
-end;
-
-procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-  FreeAndNil(PrimeL);
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);

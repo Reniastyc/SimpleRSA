@@ -3,7 +3,7 @@ unit RSAForm;
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, System.Generics.Collections,
+  System.SysUtils, System.Types, System.UITypes, System.Classes,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.StdCtrls, FMX.Controls.Presentation, FMX.Edit,
   FMX.Memo, FMX.EditBox, FMX.NumberBox, FMX.ScrollBox, FMX.Layouts, FMX.Memo.Types, FMX.ListBox,
   Winapi.Windows,
@@ -86,7 +86,7 @@ function GetBuildInfo: string;
 var
   RSATest: TRSATest;
   Prime1, Prime2, RSAE0, RSAE, RSAD, RSAN, RSATE, RSACO: TLongInteger;
-  PrimeL: TObjectList<TLongInteger>;
+  PrimeL: TArray<TLongInteger>;
   GetPrime1, GetPrime2, GetRSAE0: Boolean;
   MyThread1, MyThread2, MyThread3: TThread;
 
@@ -262,7 +262,7 @@ begin
   end;
   if RSATE.LessThan(RSAN) and not RSAE.IsZero then
   begin
-    RSATE.PowerModFFT(RSAE, RSAN);
+    RSATE.PowAndMod(RSAE, RSAN);
     case ComboBox2.ItemIndex of
       0: Memo1.Text := RSATE.ToString16;
       1: Memo1.Text := RSATE.ToString10;
@@ -288,7 +288,7 @@ begin
   end;
   if RSATE.LessThan(RSAN) and not RSAD.IsZero then
   begin
-    RSATE.PowerModFFT(RSAD, RSAN);
+    RSATE.PowAndMod(RSAD, RSAN);
     case ComboBox4.ItemIndex of
       0: Memo1.Text := RSATE.ToString16;
       1: Memo1.Text := RSATE.ToString10;
@@ -398,6 +398,8 @@ begin
 end;
 
 procedure TRSATest.FormClose(Sender: TObject; var Action: TCloseAction);
+var
+  i: Integer;
 begin
   FreeAndNil(Prime1);
   FreeAndNil(Prime2);
@@ -406,7 +408,10 @@ begin
   FreeAndNil(RSAD);
   FreeAndNil(RSAN);
   FreeAndNil(RSATE);
-  FreeAndNil(PrimeL);
+  for i := 0 to Length(PrimeL) - 1 do
+  begin
+    FreeAndNil(PrimeL[i]);
+  end;
 end;
 
 procedure TRSATest.FormCreate(Sender: TObject);

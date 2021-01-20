@@ -4,7 +4,7 @@
 {                                                       }
 {                    RdeEM Prime                        }
 {                     素数单元                          }
-{                     ver 1.19                          }
+{                     ver 1.20                          }
 {                                                       }
 {    Copyright(c) 2018-2019 Reniasty de El Magnifico    }
 {                   天道玄虚 出品                       }
@@ -18,18 +18,17 @@ unit RdeEM.Prime;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.UITypes, System.Generics.Collections, System.Math,
-  RdeEM.Long;
+  System.SysUtils, RdeEM.Long;
 
-  function GetRandomPrimeNumber(Digits: Integer; PrimeL: TObjectList<TLongInteger>): TLongInteger;
+  function GetRandomPrimeNumber(Digits: Integer; PrimeL: TArray<TLongInteger>): TLongInteger;
 
-  function PrimeNumbersGenerate(Count: Integer): TObjectList<TLongInteger>;
-  function PrimeNumbersGenerate10(Count: Integer): TStringList;
-  function PrimeNumbersGenerate16(Count: Integer): TStringList;
+  function PrimeNumbersGenerate(Count: Integer): TArray<TLongInteger>;
+  function PrimeNumbersGenerate10(Count: Integer): TArray<string>;
+  function PrimeNumbersGenerate16(Count: Integer): TArray<string>;
 
   function MillerRabinTest(Base, Number: TLongInteger): Boolean;
   function PrimalityTest(Number: TLongInteger; Count: Integer): Boolean; overload;
-  function PrimalityTest(Number: TLongInteger; List: TObjectList<TLongInteger>): Boolean; overload;
+  function PrimalityTest(Number: TLongInteger; List: TArray<TLongInteger>): Boolean; overload;
 
   function LIGCD(LI1, LI2: TLongInteger): TLongInteger;
   function LILCM(LI1, LI2: TLongInteger): TLongInteger;
@@ -44,9 +43,9 @@ uses
 
 implementation
 
-function GetRandomPrimeNumber(Digits: Integer; PrimeL: TObjectList<TLongInteger>): TLongInteger;
+function GetRandomPrimeNumber(Digits: Integer; PrimeL: TArray<TLongInteger>): TLongInteger;
 var
-  Number, ST1, ST2, LI, LID, LIB, LIT, LIPOne, LINOne: TLongInteger;
+  Number, ST1, ST2, LI, LIOne: TLongInteger;
   i: Integer;
   IsPrime, S: Boolean;
 begin
@@ -55,19 +54,15 @@ begin
   ST2 := TLongInteger.Create(4);
   LI := TLongInteger.Create(6);
   Number := TLongInteger.Create;
-  LID := TLongInteger.Create;
-  LIB := TLongInteger.Create;
-  LIT := TLongInteger.Create;
-  LINOne := TLongInteger.Create;
-  LIPOne := TLongInteger.Create(1);
+  LIOne := TLongInteger.Create(1);
   try
-    Number.FromRandomOdd(Digits - 3).MultiplyFFT(LI).Increase;
+    Number.FromRandomOdd(Digits - 3).Multiply(LI).Add(LIOne);
     S := False;
     repeat
       IsPrime := False;
-      for i := 0 to PrimeL.Count do
+      for i := 0 to Length(PrimeL) do
       begin
-        if i = PrimeL.Count then
+        if i = Length(PrimeL) then
         begin
           IsPrime := True;
           Break;
@@ -106,30 +101,27 @@ begin
     FreeAndNil(ST1);
     FreeAndNil(ST2);
     FreeAndNil(LI);
-    FreeAndNil(LID);
-    FreeAndNil(LIB);
-    FreeAndNil(LIT);
-    FreeAndNil(LIPOne);
-    FreeAndNil(LINOne);
+    FreeAndNil(LIOne);
   end;
   Exit(Number);
 end;
 
-function PrimeNumbersGenerate(Count: Integer): TObjectList<TLongInteger>;
+function PrimeNumbersGenerate(Count: Integer): TArray<TLongInteger>;
 var
-  LI1, LI2, LI3, LI4, LI: TLongInteger;
-  SL: TObjectList<TLongInteger>;
-  i: Integer;
+  LI1, LI2, LI3, LI4, LIOne: TLongInteger;
+  SL: TArray<TLongInteger>;
+  i, n: Integer;
 begin
-  SL := TObjectList<TLongInteger>.Create;
   LI1 := TLongInteger.Create;
   LI2 := TLongInteger.Create;
   LI3 := TLongInteger.Create;
   LI4 := TLongInteger.Create;
+  LIOne := TLongInteger.Create(1);
+  SetLength(SL, Count);
   try
     if Count > 0 then
     begin
-      SL.Add(TLongInteger.Create(2));
+      SL[0] := TLongInteger.Create(2);
     end
     else
     begin
@@ -137,7 +129,7 @@ begin
     end;
     if Count > 1 then
     begin
-      SL.Add(TLongInteger.Create(3));
+      SL[1] := TLongInteger.Create(3);
     end
     else
     begin
@@ -145,7 +137,7 @@ begin
     end;
     if Count > 2 then
     begin
-      SL.Add(TLongInteger.Create(5));
+      SL[2] := TLongInteger.Create(5);
     end
     else
     begin
@@ -153,17 +145,18 @@ begin
     end;
     if Count > 3 then
     begin
-      SL.Add(TLongInteger.Create(7));
+      SL[3] := TLongInteger.Create(7);
     end
     else
     begin
       Exit(SL);
     end;
-    LI1.CopyVal(SL.Last);
-    while SL.Count < Count do
+    n := 4;
+    LI1.FromInteger(7);
+    while n < Count do
     begin
-      LI1.Increase;
-      for i := 0 to SL.Count - 1 do
+      LI1.Add(LIOne);
+      for i := 0 to n - 1 do
       begin
         LI2.CopyVal(LI1);
         LI3.CopyVal(SL[i]);
@@ -172,10 +165,10 @@ begin
         begin
           Break;
         end;
-        if LI1.LessThan(LI4.MultiplyFFT(LI3)) then
+        if LI1.LessThan(LI4.Multiply(LI3)) then
         begin
-          LI := TLongInteger.Create;
-          SL.Add(LI.CopyVal(LI1));
+          SL[n] := TLongInteger.Create(LI1);
+          Inc(n);
           Break;
         end;
       end;
@@ -185,47 +178,85 @@ begin
     FreeAndNil(LI2);
     FreeAndNil(LI3);
     FreeAndNil(LI4);
+    FreeAndNil(LIOne);
   end;
   Exit(SL);
 end;
 
-function PrimeNumbersGenerate10(Count: Integer): TStringList;
+function PrimeNumbersGenerate10(Count: Integer): TArray<string>;
 var
-  LI1, LI2, LI3, LI4: TLongInteger;
-  SL: TStringList;
-  i: Integer;
+  LI1, LI2, LI3, LI4, LIOne: TLongInteger;
+  SL: TArray<TLongInteger>;
+  SA: TArray<string>;
+  i, n: Integer;
 begin
-  SL := TStringList.Create;
-  SL.Add('2');
-  SL.Add('3');
-  SL.Add('5');
-  SL.Add('7');
-  if Count <= 4 then for i := 3 downto Count - 1 do
-  begin
-    SL.Delete(i);
-    Exit(SL);
-  end;
   LI1 := TLongInteger.Create;
   LI2 := TLongInteger.Create;
   LI3 := TLongInteger.Create;
   LI4 := TLongInteger.Create;
+  LIOne := TLongInteger.Create(1);
+  SetLength(SL, Count);
   try
-    LI1.FromString10(SL[SL.Count - 1]);
-    while SL.Count < Count do
+    if Count > 0 then
     begin
-      LI1.Increase;
-      for i := 0 to SL.Count - 1 do
+      SL[0] := TLongInteger.Create(2);
+    end
+    else
+    begin
+      SA[0] := '2';
+      Exit(SA);
+    end;
+    if Count > 1 then
+    begin
+      SL[1] := TLongInteger.Create(3);
+    end
+    else
+    begin
+      SA[0] := '2';
+      SA[1] := '3';
+      Exit(SA);
+    end;
+    if Count > 2 then
+    begin
+      SL[2] := TLongInteger.Create(5);
+    end
+    else
+    begin
+      SA[0] := '2';
+      SA[1] := '3';
+      SA[2] := '5';
+      Exit(SA);
+    end;
+    if Count > 3 then
+    begin
+      SL[3] := TLongInteger.Create(7);
+    end
+    else
+    begin
+      SA[0] := '2';
+      SA[1] := '3';
+      SA[2] := '5';
+      SA[3] := '7';
+      Exit(SA);
+    end;
+    n := 4;
+    LI1.FromInteger(7);
+    while n < Count do
+    begin
+      LI1.Add(LIOne);
+      for i := 0 to n - 1 do
       begin
         LI2.CopyVal(LI1);
-        LI3.FromString10(SL[i]);
+        LI3.CopyVal(SL[i]);
         LI4.CopyVal(LI3);
         if LI2.Modulus(LI3).IsZero then
         begin
           Break;
         end;
-        if LI1.LessThan(LI4.MultiplyFFT(LI3)) then
+        if LI1.LessThan(LI4.Multiply(LI3)) then
         begin
-          SL.Add(LI1.ToString10);
+          SL[n] := TLongInteger.Create(LI1);
+          Inc(n);
           Break;
         end;
       end;
@@ -235,47 +266,89 @@ begin
     FreeAndNil(LI2);
     FreeAndNil(LI3);
     FreeAndNil(LI4);
+    FreeAndNil(LIOne);
   end;
-  Exit(SL);
+  for i := 0 to n - 1 do
+  begin
+    SA[i] := SL[i].ToString10;
+  end;
+  Exit(SA);
 end;
 
-function PrimeNumbersGenerate16(Count: Integer): TStringList;
+function PrimeNumbersGenerate16(Count: Integer): TArray<string>;
 var
-  LI1, LI2, LI3, LI4: TLongInteger;
-  SL: TStringList;
-  i: Integer;
+  LI1, LI2, LI3, LI4, LIOne: TLongInteger;
+  SL: TArray<TLongInteger>;
+  SA: TArray<string>;
+  i, n: Integer;
 begin
-  SL := TStringList.Create;
-  SL.Add('2');
-  SL.Add('3');
-  SL.Add('5');
-  SL.Add('7');
-  if Count <= 4 then for i := 3 downto Count - 1 do
-  begin
-    SL.Delete(i);
-    Exit(SL);
-  end;
   LI1 := TLongInteger.Create;
   LI2 := TLongInteger.Create;
   LI3 := TLongInteger.Create;
   LI4 := TLongInteger.Create;
+  LIOne := TLongInteger.Create(1);
+  SetLength(SL, Count);
   try
-    LI1.FromString16(SL[SL.Count - 1]);
-    while SL.Count < Count do
+    if Count > 0 then
     begin
-      LI1.Increase;
-      for i := 0 to SL.Count - 1 do
+      SL[0] := TLongInteger.Create(2);
+    end
+    else
+    begin
+      SA[0] := '2';
+      Exit(SA);
+    end;
+    if Count > 1 then
+    begin
+      SL[1] := TLongInteger.Create(3);
+    end
+    else
+    begin
+      SA[0] := '2';
+      SA[1] := '3';
+      Exit(SA);
+    end;
+    if Count > 2 then
+    begin
+      SL[2] := TLongInteger.Create(5);
+    end
+    else
+    begin
+      SA[0] := '2';
+      SA[1] := '3';
+      SA[2] := '5';
+      Exit(SA);
+    end;
+    if Count > 3 then
+    begin
+      SL[3] := TLongInteger.Create(7);
+    end
+    else
+    begin
+      SA[0] := '2';
+      SA[1] := '3';
+      SA[2] := '5';
+      SA[3] := '7';
+      Exit(SA);
+    end;
+    n := 4;
+    LI1.FromInteger(7);
+    while n < Count do
+    begin
+      LI1.Add(LIOne);
+      for i := 0 to n - 1 do
       begin
         LI2.CopyVal(LI1);
-        LI3.FromString16(SL[i]);
+        LI3.CopyVal(SL[i]);
         LI4.CopyVal(LI3);
         if LI2.Modulus(LI3).IsZero then
         begin
           Break;
         end;
-        if LI1.LessThan(LI4.MultiplyFFT(LI3)) then
+        if LI1.LessThan(LI4.Multiply(LI3)) then
         begin
-          SL.Add(LI1.ToString16);
+          SL[n] := TLongInteger.Create(LI1);
+          Inc(n);
           Break;
         end;
       end;
@@ -285,8 +358,13 @@ begin
     FreeAndNil(LI2);
     FreeAndNil(LI3);
     FreeAndNil(LI4);
+    FreeAndNil(LIOne);
   end;
-  Exit(SL);
+  for i := 0 to n - 1 do
+  begin
+    SA[i] := SL[i].ToString16;
+  end;
+  Exit(SA);
 end;
 
 function MillerRabinTest(Base, Number: TLongInteger): Boolean;
@@ -320,7 +398,7 @@ begin
     begin
       LID.ShiftR(1);
     end;
-    LIB.PowerModFFT(LID, Number);
+    LIB.PowAndMod(LID, Number);
     if LIB.Equal(LIPOne) or LIB.Equal(LINOne) then
     begin
       Exit(True);
@@ -328,7 +406,7 @@ begin
     else while not LID.Equal(LIT) do
     begin
       LID.ShiftL(1);
-      if LIB.CopyVal(Base).PowerModFFT(LID, Number).Equal(LINOne) then
+      if LIB.CopyVal(Base).PowAndMod(LID, Number).Equal(LINOne) then
       begin
         Exit(True);
       end;
@@ -345,7 +423,7 @@ end;
 
 function PrimalityTest(Number: TLongInteger; Count: Integer): Boolean;
 var
-  List: TObjectList<TLongInteger>;
+  List: TArray<TLongInteger>;
   Base, LI: TLongInteger;
   i: Integer;
 begin
@@ -353,7 +431,7 @@ begin
   LI := TLongInteger.Create;
   List := PrimeNumbersGenerate(Count);
   try
-    for i := 0 to List.Count - 1 do
+    for i := 0 to Count - 1 do
     begin
       Base.CopyVal(List[i]);
       if Base.Equal(Number) then
@@ -370,14 +448,17 @@ begin
       end;
     end;
   finally
-    FreeAndNil(List);
     FreeAndNil(LI);
     FreeAndNil(Base);
+    for i := 0 to Count - 1 do
+    begin
+      FreeAndNil(List[i]);
+    end;
   end;
   Exit(True);
 end;
 
-function PrimalityTest(Number: TLongInteger; List: TObjectList<TLongInteger>): Boolean;
+function PrimalityTest(Number: TLongInteger; List: TArray<TLongInteger>): Boolean;
 var
   Base, LI: TLongInteger;
   i: Integer;
@@ -385,7 +466,7 @@ begin
   Base := TLongInteger.Create;
   LI := TLongInteger.Create;
   try
-    for i := 0 to List.Count - 1 do
+    for i := 0 to Length(List) - 1 do
     begin
       Base.CopyVal(List[i]);
       if Base.Equal(Number) then
@@ -431,7 +512,7 @@ begin
   LIY := LIGCD(LI1, LI2);
   LIX := TLongInteger.Create;
   try
-    LIX.CopyVal(LI1).MultiplyFFT(LI2).Divide(LIY);
+    LIX.CopyVal(LI1).Multiply(LI2).Divide(LIY);
   except
     on EZeroError do
     begin
@@ -520,7 +601,7 @@ var
 begin
   if LB.IsZero then
   begin
-    LX.Zero.Increase;
+    LX.FromInteger(1);
     LY.Zero;
     Exit(TLongInteger.Create(LA));
   end;
@@ -529,7 +610,7 @@ begin
   TE := TLongInteger.Create(LX);
   TS := TLongInteger.Create(LA);
   try
-    LY.Subtract(TE.MultiplyFFT(TS.Divide(LB)));
+    LY.Subtract(TE.Multiply(TS.Divide(LB)));
   finally
     FreeAndNil(TE);
     FreeAndNil(TS);
@@ -562,16 +643,18 @@ end;
 
 procedure RSAParameter(P1, P2, E0: TLongInteger; var E, D, N: TLongInteger);
 var
-  L, T1, T2: TLongInteger;
+  L, T1, T2, LIOne, LITwo: TLongInteger;
 begin
   T1 := TLongInteger.Create;
   T2 := TLongInteger.Create;
+  LIOne := TLongInteger.Create(1);
+  LITwo := TLongInteger.Create(2);
   try
-    N.CopyVal(P1).MultiplyFFT(P2);
-    T1.CopyVal(P1).Decrease;
-    T2.CopyVal(P2).Decrease;
+    N.CopyVal(P1).Multiply(P2);
+    T1.CopyVal(P1).Subtract(LIOne);
+    T2.CopyVal(P2).Subtract(LIOne);
     L := LILCM(T1, T2);
-    T1.CopyVal(L).Decrease.Decrease;
+    T1.CopyVal(L).Subtract(LITwo);
     E.CopyVal(E0);
     while not E.LessThan(L) do
     begin
@@ -579,12 +662,14 @@ begin
     end;
     while not IsCoPrime(E, L) do
     begin
-      E.Increase;
+      E.Add(LIOne);
     end;
     D := IntegerInverse(E, L);
   finally
     FreeAndNil(T1);
     FreeAndNil(T2);
+    FreeAndNil(LIOne);
+    FreeAndNil(LITwo);
   end;
 end;
 

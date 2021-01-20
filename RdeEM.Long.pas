@@ -4,7 +4,7 @@
 {                                                       }
 {                    RdeEM Long                         }
 {                     大数单元                          }
-{                     ver 1.19                          }
+{                     ver 1.20                          }
 {                                                       }
 {    Copyright(c) 2018-2019 Reniasty de El Magnifico    }
 {                   天道玄虚 出品                       }
@@ -18,7 +18,7 @@ unit RdeEM.Long;
 interface
 
 uses
-  System.Classes, System.SysUtils, System.UITypes, System.Generics.Collections, System.Math, System.VarCmplx;
+  System.SysUtils, System.Math;
 
 type
   EZeroError = class(Exception);
@@ -26,12 +26,11 @@ type
 
   TLongInteger = class;
   TLongReal = class;
-  TBigInteger = class;
 
   TComplex = record
   private
-    FM: Double; // Modulus
-    FA: Double; // Argument
+    FM: Double; // 模數
+    FA: Double; // 輻角
   public
     class function Create(const Modulus, Argument: Double): TComplex; static;
     class operator Multiply(const C1, C2: TComplex): TComplex; overload;
@@ -77,8 +76,7 @@ type
     class operator Modulus(const Hex1, Hex2: THexInt): THexInt;
     // 其他功能
     function Power(const Hex1: THexInt): THexInt;
-    function PowerMod(const Hex1, Hex2: THexInt): THexInt;
-      //  該組傅立葉變換未經良好的優化
+    function PowAndMod(const Hex1, Hex2: THexInt): THexInt;
     // 屬性
     property BinValue: string          read GetBinValue         write SetBinValue;
     property DecValue: string          read GetDecValue         write SetDecValue;
@@ -89,8 +87,8 @@ type
   private
     FSymb: Boolean; // 符号位，True代表正数。
     FNumL: TArray<Boolean>;
-    function AbsAdd(Par: TLongInteger): TLongInteger;
-    function AbsSub(Par: TLongInteger): TLongInteger;
+    function AbsAdd(const Par: TLongInteger): TLongInteger;
+    function AbsSub(const Par: TLongInteger): TLongInteger;
     function Mut10PowN(N: TLongInteger): TLongInteger;
     function Div10PowN(N: TLongInteger): TLongInteger;
     function Normalize: TLongInteger;
@@ -104,11 +102,11 @@ type
     constructor Create(N: Byte); overload;
     destructor Destroy; override;
     // 複製
-    function CopyVal(Par: TLongInteger): TLongInteger;
+    function CopyVal(const Par: TLongInteger): TLongInteger;
     // 判斷
-    function Equal(Par: TLongInteger): Boolean;
-    function LessThan(Par: TLongInteger): Boolean;
-    function GreaterThan(Par: TLongInteger): Boolean;
+    function Equal(const Par: TLongInteger): Boolean;
+    function LessThan(const Par: TLongInteger): Boolean;
+    function GreaterThan(const Par: TLongInteger): Boolean;
     function IsZero: Boolean;
     function IsEven: Boolean;
     function IsOdd: Boolean;
@@ -139,20 +137,17 @@ type
     function Positive: TLongInteger;
     function Negative: TLongInteger;
     // 運算
-    function Add(Par: TLongInteger): TLongInteger;
-    function Subtract(Par: TLongInteger): TLongInteger;
-    function MultiplyFFT(Par: TLongInteger): TLongInteger; // 應用了快速傅立葉變換的乘法
-    function Divide(Par: TLongInteger): TLongInteger;
-    function Modulus(Par: TLongInteger): TLongInteger;
-    function PowerFFT(Par: TLongInteger): TLongInteger;
-    function PowerModFFT(PowPar, ModPar: TLongInteger): TLongInteger; // 將乘法替換爲快速傅立葉變換乘法
-    function DivAndMod(Par: TLongInteger; var ModVal: TLongInteger): TLongInteger;
-    function DivAndMod10(var ModVal: TLongInteger): TLongInteger;
-    function Increase(Step: Cardinal = 1): TLongInteger;
-    function Decrease(Step: Cardinal = 1): TLongInteger;
-    function LogicalXor(Par: TLongInteger): TLongInteger;
-    function LogicalOr(Par: TLongInteger): TLongInteger;
-    function LogicalAnd(Par: TLongInteger): TLongInteger;
+    function Add(const Par: TLongInteger): TLongInteger;
+    function Subtract(const Par: TLongInteger): TLongInteger;
+    function Multiply(const Par: TLongInteger): TLongInteger;
+    function Divide(const Par: TLongInteger): TLongInteger;
+    function Modulus(const Par: TLongInteger): TLongInteger;
+    function Power(const Par: TLongInteger): TLongInteger;
+    function PowAndMod(PowPar, ModPar: TLongInteger): TLongInteger;
+    function DivAndMod(const Par, ModVal: TLongInteger): TLongInteger;
+    function LogicalXor(const Par: TLongInteger): TLongInteger;
+    function LogicalOr(const Par: TLongInteger): TLongInteger;
+    function LogicalAnd(const Par: TLongInteger): TLongInteger;
     function LogicalNot: TLongInteger;
     function ShiftR(Shift: Integer): TLongInteger;
     function ShiftL(Shift: Integer): TLongInteger;
@@ -172,11 +167,11 @@ type
     constructor Create(Coe, Exp: TLongInteger); overload;
     destructor Destroy; override;
     // 複製
-    function CopyVal(Par: TLongReal): TLongReal;
+    function CopyVal(const Par: TLongReal): TLongReal;
     // 判斷
-    function Equal(Par: TLongReal; Digit: Integer = -5): Boolean;
-    function LessThan(Par: TLongReal; Digit: Integer = -5): Boolean;
-    function GreaterThan(Par: TLongReal; Digit: Integer = -5): Boolean;
+    function Equal(const Par: TLongReal; Digit: Integer = -5): Boolean;
+    function LessThan(const Par: TLongReal; Digit: Integer = -5): Boolean;
+    function GreaterThan(const Par: TLongReal; Digit: Integer = -5): Boolean;
       // Digit代表判定精度，如果兩數之差在該量級範圍內，則判定爲相等。
       // 如Digit取-5時，則相差絕對值在Power(10, -5)內都視爲相等。
     // 歸零、絕對值、正負
@@ -187,64 +182,16 @@ type
     function Trunc(LI: TLongInteger): TLongInteger;
     function Round(LI: TLongInteger): TLongInteger;
     // 四則運算
-    function Add(Par: TLongReal): TLongReal;
-    function Subtract(Par: TLongReal): TLongReal;
-    function Multiply(Par: TLongReal): TLongReal;
-    function Divide(Par: TLongReal; Digit: Cardinal = 5): TLongReal;
+    function Add(const Par: TLongReal): TLongReal;
+    function Subtract(const Par: TLongReal): TLongReal;
+    function Multiply(const Par: TLongReal): TLongReal;
+    function Divide(const Par: TLongReal; Digit: Cardinal = 5): TLongReal;
       // Digit代表額外的位數。取0則相當於對兩數的係數部份做整數除法，取x則相當於保留x位小數
     // 轉換（僅支持無小數點之科學記數法的轉換）
     function ToStringOri: string;
     function FromStringOri(Str: string): Boolean;
     function FromInteger(Coe, Exp: Integer): TLongReal; overload;
     function FromInteger(Coe, Exp: Int64): TLongReal; overload;
-  end;
-
-  TBigInteger = class
-  private
-    FSign: Boolean;
-    FNumbers: TArray<Byte>;
-    function Normalize: TBigInteger;
-    function AbsAdd(const Par: TBigInteger): TBigInteger;
-    function AbsSub(const Par: TBigInteger): TBigInteger;
-    function AbsGreater(const Par: TBigInteger): Boolean;
-    function AbsLess(const Par: TBigInteger): Boolean;
-  public
-    constructor Create; overload;
-    constructor Create(N: Byte); overload;
-    constructor Create(N: Word); overload;
-    constructor Create(N: Cardinal); overload;
-    constructor Create(N: Integer); overload;
-    constructor Create(N: Int64); overload;
-    constructor Create(const BI: TBigInteger); overload;
-    function CopyValue(const Par: TBigInteger): TBigInteger;
-    // 判斷
-    function IsZero: Boolean;
-    function IsEven: Boolean;
-    function IsOdd: Boolean;
-    function GreaterThan(const Par: TBigInteger): Boolean;
-    function LessThan(const Par: TBigInteger): Boolean;
-    function Equal(const Par: TBigInteger): Boolean;
-    // 計算
-    function Zero: TBigInteger;
-    function AbsoluteVal: TBigInteger;
-    function Positive: TBigInteger;
-    function Negative: TBigInteger;
-    function ShiftL(const Value: Integer): TBigInteger;
-    function ShiftR(const Value: Integer): TBigInteger;
-    function Add(Par: TBigInteger): TBigInteger;
-    function Subtract(const Par: TBigInteger): TBigInteger;
-    function MultiplyBase(const Par: TBigInteger): TBigInteger;
-    function MultiplyDNC(const Par: TBigInteger; const Devided: Boolean = False): TBigInteger; // 分治乘法
-    function MultiplyFFT(const Par: TBigInteger): TBigInteger; // 快速傅立葉變換乘法
-    function Divide(const Par: TBigInteger): TBigInteger;
-    function Module(const Par: TBigInteger): TBigInteger;
-    function DivideBase(const Par: TBigInteger; const Module: TBigInteger = nil): TBigInteger;
-    function PowAndModBase(const Par, Module: TBigInteger): TBigInteger;
-    function PowAndModDNC(const Par, Module: TBigInteger): TBigInteger;
-    function PowAndModFFT(const Par, Module: TBigInteger): TBigInteger;
-    // 轉化
-    function FromString16(Str: string): Boolean;
-
   end;
 
   function GetHexChr(N: Byte): Char;
@@ -486,7 +433,7 @@ end;
 
 { TLongInteger }
 
-function TLongInteger.AbsAdd(Par: TLongInteger): TLongInteger;
+function TLongInteger.AbsAdd(const Par: TLongInteger): TLongInteger;
 var
   C, X, Y: Boolean;
   i, l: Integer;
@@ -519,7 +466,7 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.AbsSub(Par: TLongInteger): TLongInteger;
+function TLongInteger.AbsSub(const Par: TLongInteger): TLongInteger;
 var
   C, X, Y, G: Boolean;
   i, l: Integer;
@@ -590,7 +537,7 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.Add(Par: TLongInteger): TLongInteger;
+function TLongInteger.Add(const Par: TLongInteger): TLongInteger;
 begin
   if IsZero then
   begin
@@ -611,7 +558,7 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.CopyVal(Par: TLongInteger): TLongInteger;
+function TLongInteger.CopyVal(const Par: TLongInteger): TLongInteger;
 var
   i: Integer;
 begin
@@ -720,19 +667,6 @@ begin
   SetLength(FNumL, i);
 end;
 
-function TLongInteger.Decrease(Step: Cardinal): TLongInteger;
-var
-  LI: TLongInteger;
-begin
-  LI := TLongInteger.Create(Step);
-  try
-    Subtract(LI);
-  finally
-    FreeAndNil(LI);
-  end;
-  Exit(Self);
-end;
-
 destructor TLongInteger.Destroy;
 begin
   SetLength(FNumL, 0);
@@ -750,7 +684,7 @@ var
 begin
   M := TLongInteger.Create(10);
   try
-    M.PowerFFT(N);
+    M.Power(N);
     Divide(M);
   finally
     FreeAndNil(M);
@@ -758,68 +692,13 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.DivAndMod(Par: TLongInteger; var ModVal: TLongInteger): TLongInteger;
+function TLongInteger.DivAndMod(const Par, ModVal: TLongInteger): TLongInteger;
 var
   ALI, BLI: TLongInteger;
   n, i: Integer;
   S: Boolean;
 begin
   Normalize;
-  Par.Normalize;
-  if IsZero then
-  begin
-    Zero;
-    Exit(Self);
-  end;
-  if Par.IsZero then
-  begin
-    raise EZeroError.Create('Error Message: Cannot divide ZERO!!');
-  end;
-  ALI := TLongInteger.Create;
-  BLI := TLongInteger.Create;
-  try
-    S := not (FSymb xor Par.FSymb);
-    ALI.CopyVal(Par);
-    ALI.FSymb := True;
-    FSymb := True;
-    if LessThan(ALI) then
-    begin
-      Zero;
-      Exit(Self);
-    end;
-    n := Length(FNumL) - Length(Par.FNumL);
-    SetLength(BLI.FNumL, n + 1);
-    ALI.ShiftL(n);
-    for i := n downto 0 do
-    begin
-      if not LessThan(ALI) then
-      begin
-        AbsSub(ALI);
-        BLI.FNumL[i] := True;
-      end
-      else
-      begin
-        BLI.FNumL[i] := False;
-      end;
-      ALI.ShiftR(1);
-    end;
-    BLI.Normalize;
-    ModVal.CopyVal(BLI);
-    FSymb := S;
-  finally
-    FreeAndNil(ALI);
-    FreeAndNil(BLI);
-  end;
-  Exit(Self);
-end;
-
-function TLongInteger.DivAndMod10(var ModVal: TLongInteger): TLongInteger;
-var
-  ALI, BLI, Par: TLongInteger;
-  n, i: Integer;
-  S: Boolean;
-begin
-  Normalize;
   if IsZero then
   begin
     Zero;
@@ -827,13 +706,7 @@ begin
   end;
   ALI := TLongInteger.Create;
   BLI := TLongInteger.Create;
-  Par := TLongInteger.Create;
   try
-    SetLength(Par.FNumL, 4);
-    Par.FNumL[0] := False;
-    Par.FNumL[1] := True;
-    Par.FNumL[2] := False;
-    Par.FNumL[3] := True;
     S := not (FSymb xor Par.FSymb);
     ALI.CopyVal(Par);
     ALI.FSymb := True;
@@ -867,12 +740,11 @@ begin
   finally
     FreeAndNil(ALI);
     FreeAndNil(BLI);
-    FreeAndNil(Par);
   end;
   Exit(Self);
 end;
 
-function TLongInteger.Divide(Par: TLongInteger): TLongInteger;
+function TLongInteger.Divide(const Par: TLongInteger): TLongInteger;
 var
   ALI, BLI: TLongInteger;
   n, i: Integer;
@@ -927,7 +799,7 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.Equal(Par: TLongInteger): Boolean;
+function TLongInteger.Equal(const Par: TLongInteger): Boolean;
 var
   i: Integer;
 begin
@@ -1191,7 +1063,7 @@ begin
     begin
       v := GetDecVal(Str.Chars[i]);
       LI.FromInteger(v);
-      MultiplyFFT(Par).Add(LI);
+      Multiply(Par).Add(LI);
     end;
   finally
     FreeAndNil(LI);
@@ -1321,7 +1193,7 @@ begin
   Exit(FNumL[Index]);
 end;
 
-function TLongInteger.GreaterThan(Par: TLongInteger): Boolean;
+function TLongInteger.GreaterThan(const Par: TLongInteger): Boolean;
 var
   i: Integer;
 begin
@@ -1355,19 +1227,6 @@ begin
     end;
   end;
   Exit(False);
-end;
-
-function TLongInteger.Increase(Step: Cardinal): TLongInteger;
-var
-  LI: TLongInteger;
-begin
-  LI := TLongInteger.Create(Step);
-  try
-    Add(LI);
-  finally
-    FreeAndNil(LI);
-  end;
-  Exit(Self);
 end;
 
 function TLongInteger.IsEven: Boolean;
@@ -1393,7 +1252,7 @@ begin
   end;
 end;
 
-function TLongInteger.LessThan(Par: TLongInteger): Boolean;
+function TLongInteger.LessThan(const Par: TLongInteger): Boolean;
 var
   i: Integer;
 begin
@@ -1429,7 +1288,7 @@ begin
   Exit(False);
 end;
 
-function TLongInteger.LogicalAnd(Par: TLongInteger): TLongInteger;
+function TLongInteger.LogicalAnd(const Par: TLongInteger): TLongInteger;
 var
   i, n: Integer;
 begin
@@ -1463,7 +1322,7 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.LogicalOr(Par: TLongInteger): TLongInteger;
+function TLongInteger.LogicalOr(const Par: TLongInteger): TLongInteger;
 var
   i, n: Integer;
 begin
@@ -1493,7 +1352,7 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.LogicalXor(Par: TLongInteger): TLongInteger;
+function TLongInteger.LogicalXor(const Par: TLongInteger): TLongInteger;
 var
   i, n: Integer;
 begin
@@ -1523,7 +1382,7 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.Modulus(Par: TLongInteger): TLongInteger;
+function TLongInteger.Modulus(const Par: TLongInteger): TLongInteger;
 var
   ALI: TLongInteger;
   n, i: Integer;
@@ -1569,7 +1428,7 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.MultiplyFFT(Par: TLongInteger): TLongInteger;
+function TLongInteger.Multiply(const Par: TLongInteger): TLongInteger;
 var
   Bit, NumLength, i: Integer;
   RevList: TArray<Integer>;
@@ -1616,8 +1475,8 @@ var
 begin
   M := TLongInteger.Create(10);
   try
-    M.PowerFFT(N);
-    MultiplyFFT(M);
+    M.Power(N);
+    Multiply(M);
   finally
     FreeAndNil(M);
   end;
@@ -1656,7 +1515,7 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.PowerFFT(Par: TLongInteger): TLongInteger;
+function TLongInteger.Power(const Par: TLongInteger): TLongInteger;
 var
   LIB, LIP: TLongInteger;
   S: Boolean;
@@ -1687,10 +1546,10 @@ begin
     begin
       if LIP.FNumL[0] then
       begin
-        MultiplyFFT(LIB);
+        Multiply(LIB);
       end;
       LIP.ShiftR(1);
-      LIB.MultiplyFFT(LIB);
+      LIB.Multiply(LIB);
     end;
   finally
     LIB.DisposeOf;
@@ -1700,7 +1559,7 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.PowerModFFT(PowPar, ModPar: TLongInteger): TLongInteger;
+function TLongInteger.PowAndMod(PowPar, ModPar: TLongInteger): TLongInteger;
 var
   LIB, LIP: TLongInteger;
   S: Boolean;
@@ -1735,10 +1594,10 @@ begin
     begin
       if LIP.FNumL[0] then
       begin
-        MultiplyFFT(LIB).Modulus(ModPar);
+        Multiply(LIB).Modulus(ModPar);
       end;
       LIP.ShiftR(1);
-      LIB.MultiplyFFT(LIB).Modulus(ModPar);
+      LIB.Multiply(LIB).Modulus(ModPar);
     end;
   finally
     LIB.DisposeOf;
@@ -1785,7 +1644,7 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.Subtract(Par: TLongInteger): TLongInteger;
+function TLongInteger.Subtract(const Par: TLongInteger): TLongInteger;
 begin
   if IsZero then
   begin
@@ -1891,7 +1750,7 @@ function TLongInteger.ToString10: string;
 var
   F: Boolean;
   s: string;
-  Par, ModVal: TLongInteger;
+  Par, ModVal, LITen: TLongInteger;
 begin
   if Length(FNumL) = 0 then
   begin
@@ -1902,10 +1761,11 @@ begin
   FSymb := True;
   ModVal := TLongInteger.Create;
   Par := TLongInteger.Create;
+  LITen := TLongInteger.Create(10);
   try
     Par.CopyVal(Self);
     repeat
-      Par.DivAndMod10(ModVal);
+      Par.DivAndMod(LITen, ModVal);
       s := ModVal.ToString16 + s;
     until Par.IsZero;
   finally
@@ -2203,7 +2063,7 @@ begin
   try
     LI1.FromString16(Hex1.FHex);
     LI2.FromString16(Hex2.FHex);
-    Result.FHex := LI1.MultiplyFFT(LI2).ToString16;
+    Result.FHex := LI1.Multiply(LI2).ToString16;
   finally
     FreeAndNil(LI1);
     FreeAndNil(LI2);
@@ -2254,14 +2114,14 @@ begin
   try
     LI1.FromString16(FHex);
     LI2.FromString16(Hex1.FHex);
-    Result.FHex := LI1.PowerFFT(LI2).ToString16;
+    Result.FHex := LI1.Power(LI2).ToString16;
   finally
     FreeAndNil(LI1);
     FreeAndNil(LI2);
   end;
 end;
 
-function THexInt.PowerMod(const Hex1, Hex2: THexInt): THexInt;
+function THexInt.PowAndMod(const Hex1, Hex2: THexInt): THexInt;
 var
   LI1, LI2, LI3: TLongInteger;
 begin
@@ -2272,7 +2132,7 @@ begin
     LI1.FromString16(FHex);
     LI2.FromString16(Hex1.FHex);
     LI3.FromString16(Hex2.FHex);
-    Result.FHex := LI1.PowerModFFT(LI2, LI3).ToString16;
+    Result.FHex := LI1.PowAndMod(LI2, LI3).ToString16;
   finally
     FreeAndNil(LI1);
     FreeAndNil(LI2);
@@ -2348,7 +2208,7 @@ begin
   Exit(Self);
 end;
 
-function TLongReal.Add(Par: TLongReal): TLongReal;
+function TLongReal.Add(const Par: TLongReal): TLongReal;
 var
   N: TLongInteger;
   R: TLongReal;
@@ -2375,7 +2235,7 @@ begin
   Exit(Self);
 end;
 
-function TLongReal.CopyVal(Par: TLongReal): TLongReal;
+function TLongReal.CopyVal(const Par: TLongReal): TLongReal;
 begin
   FCoe.CopyVal(Par.FCoe);
   FExp.CopyVal(Par.FExp);
@@ -2422,7 +2282,7 @@ begin
   inherited;
 end;
 
-function TLongReal.Divide(Par: TLongReal; Digit: Cardinal): TLongReal;
+function TLongReal.Divide(const Par: TLongReal; Digit: Cardinal): TLongReal;
 var
   N: TLongInteger;
 begin
@@ -2437,7 +2297,7 @@ begin
   Exit(Self);
 end;
 
-function TLongReal.Equal(Par: TLongReal; Digit: Integer): Boolean;
+function TLongReal.Equal(const Par: TLongReal; Digit: Integer): Boolean;
 var
   R: TLongReal;
   N: TLongInteger;
@@ -2501,7 +2361,7 @@ begin
   end;
 end;
 
-function TLongReal.GreaterThan(Par: TLongReal; Digit: Integer): Boolean;
+function TLongReal.GreaterThan(const Par: TLongReal; Digit: Integer): Boolean;
 var
   R: TLongReal;
   N: TLongInteger;
@@ -2539,7 +2399,7 @@ begin
   Exit(False);
 end;
 
-function TLongReal.LessThan(Par: TLongReal; Digit: Integer): Boolean;
+function TLongReal.LessThan(const Par: TLongReal; Digit: Integer): Boolean;
 var
   R: TLongReal;
   N: TLongInteger;
@@ -2578,9 +2438,9 @@ begin
   Exit(False);
 end;
 
-function TLongReal.Multiply(Par: TLongReal): TLongReal;
+function TLongReal.Multiply(const Par: TLongReal): TLongReal;
 begin
-  FCoe.MultiplyFFT(Par.FCoe);
+  FCoe.Multiply(Par.FCoe);
   FExp.Add(Par.FExp);
   Normalize;
   Exit(Self);
@@ -2630,9 +2490,11 @@ end;
 function TLongReal.Round(LI: TLongInteger): TLongInteger;
 var
   LRA, LRB: TLongReal;
+  LIOne: TLongInteger;
 begin
   LRA := TLongReal.Create;
   LRB := TLongReal.Create;
+  LIOne := TLongInteger.Create(1);
   try
     LRA.FCoe.CopyVal(Trunc(LI));
     LRA.FExp.FromInteger(0);
@@ -2641,17 +2503,18 @@ begin
     LRB.FromInteger(5, -1);
     if (LRA.Equal(LRB) and LI.IsOdd) or LRA.GreaterThan(LRB) then
     begin
-      LI.Increase;
+      LI.Add(LIOne);
     end;
     LI.FSymb := FCoe.FSymb;
   finally
     FreeAndNil(LRA);
     FreeAndNil(LRB);
+    FreeAndNil(LIOne);
   end;
   Exit(LI);
 end;
 
-function TLongReal.Subtract(Par: TLongReal): TLongReal;
+function TLongReal.Subtract(const Par: TLongReal): TLongReal;
 var
   N: TLongInteger;
   R: TLongReal;
@@ -2709,801 +2572,6 @@ function TLongReal.Zero: TLongReal;
 begin
   FCoe.Zero;
   FExp.Zero;
-  Exit(Self);
-end;
-
-{ TBigInteger }
-
-function TBigInteger.AbsAdd(const Par: TBigInteger): TBigInteger;
-var
-  Value, Carry, A, B: Byte;
-  Temp: Word;
-  i, l, l0: Integer;
-begin
-  Normalize;
-  Par.Normalize;
-  l0 := Length(FNumbers);
-  l := Max(l0, Length(Par.FNumbers)) + 1;
-  SetLength(FNumbers, l);
-  Carry := 0;
-  for i := 0 to l - 1 do
-  begin
-    if i < l0 then
-    begin
-      A := FNumbers[i];
-    end
-    else
-    begin
-      A := 0;
-    end;
-    if i < Length(Par.FNumbers) then
-    begin
-      B := Par.FNumbers[i];
-    end
-    else
-    begin
-      B := 0;
-    end;
-    Temp := A + B + Carry;
-    Value := Temp and 255;
-    Carry := Temp shr 8;
-    FNumbers[i] := Value;
-  end;
-  Normalize;
-  Exit(Self);
-end;
-
-function TBigInteger.AbsGreater(const Par: TBigInteger): Boolean;
-var
-  i: Integer;
-begin
-  Normalize;
-  Par.Normalize;
-  if Length(FNumbers) > Length(Par.FNumbers) then
-  begin
-    Exit(True);
-  end;
-  if Length(FNumbers) < Length(Par.FNumbers) then
-  begin
-    Exit(False);
-  end;
-  for i := Length(FNumbers) - 1 downto 0 do if FNumbers[i] > Par.FNumbers[i] then
-  begin
-    Exit(True);
-  end
-  else if FNumbers[i] < Par.FNumbers[i] then
-  begin
-    Exit(False);
-  end;
-  Exit(False);
-end;
-
-function TBigInteger.AbsLess(const Par: TBigInteger): Boolean;
-var
-  i: Integer;
-begin
-  Normalize;
-  Par.Normalize;
-  if Length(FNumbers) < Length(Par.FNumbers) then
-  begin
-    Exit(True);
-  end;
-  if Length(FNumbers) > Length(Par.FNumbers) then
-  begin
-    Exit(False);
-  end;
-  for i := Length(FNumbers) - 1 downto 0 do if FNumbers[i] < Par.FNumbers[i] then
-  begin
-    Exit(True);
-  end
-  else if FNumbers[i] > Par.FNumbers[i] then
-  begin
-    Exit(False);
-  end;
-  Exit(False);
-end;
-
-function TBigInteger.AbsoluteVal: TBigInteger;
-begin
-  Normalize;
-  FSign := True;
-  Exit(Self);
-end;
-
-function TBigInteger.AbsSub(const Par: TBigInteger): TBigInteger;
-var
-  Value, Carry, A, B: Byte;
-  i, l, l0: Integer;
-begin
-  Normalize;
-  Par.Normalize;
-  l0 := Length(FNumbers);
-  l := Max(l0, Length(Par.FNumbers));
-  SetLength(FNumbers, l);
-  Carry := 0;
-  for i := 0 to l - 1 do
-  begin
-    if i < l0 then
-    begin
-      A := FNumbers[i];
-    end
-    else
-    begin
-      A := 0;
-    end;
-    if i < Length(Par.FNumbers) then
-    begin
-      B := Par.FNumbers[i];
-    end
-    else
-    begin
-      B := 0;
-    end;
-    if A > B + Carry then
-    begin
-      Value := A - B - Carry;
-      Carry := 0;
-    end
-    else
-    begin
-      Value := 256 + A - B - Carry;
-      Carry := 1;
-    end;
-    FNumbers[i] := Value;
-  end;
-  if Carry = 1 then
-  begin
-    FSign := not FSign;
-    FNumbers[0] := 256 - FNumbers[0];
-    for i := 1 to l - 1 do
-    begin
-      FNumbers[i] := not FNumbers[i];
-    end;
-  end;
-  Normalize;
-  Exit(Self);
-end;
-
-function TBigInteger.Add(Par: TBigInteger): TBigInteger;
-begin
-  if FSign = Par.FSign then
-  begin
-    Exit(AbsAdd(Par));
-  end
-  else
-  begin
-    Exit(AbsSub(Par));
-  end;
-end;
-
-function TBigInteger.CopyValue(const Par: TBigInteger): TBigInteger;
-begin
-  Par.Normalize;
-  FSign := Par.FSign;
-  FNumbers := Copy(Par.FNumbers, 0, Length(Par.FNumbers));
-  Exit(Self);
-end;
-
-constructor TBigInteger.Create;
-begin
-  FSign := True;
-  SetLength(FNumbers, 1);
-  FNumbers[0] := 0;
-end;
-
-constructor TBigInteger.Create(N: Byte);
-begin
-  FSign := True;
-  SetLength(FNumbers, 1);
-  FNumbers[0] := N;
-end;
-
-constructor TBigInteger.Create(N: Word);
-begin
-  FSign := True;
-  SetLength(FNumbers, 2);
-  FNumbers[0] := N and 255;
-  FNumbers[1] := N shr 8;
-end;
-
-constructor TBigInteger.Create(N: Cardinal);
-begin
-  FSign := True;
-  SetLength(FNumbers, 4);
-  FNumbers[0] := N and 255;
-  FNumbers[1] := (N shr 8) and 255;
-  FNumbers[2] := (N shr 16) and 255;
-  FNumbers[3] := N shr 24;
-end;
-
-constructor TBigInteger.Create(N: Integer);
-begin
-  FSign := N > 0;
-  N := Abs(N);
-  SetLength(FNumbers, 4);
-  FNumbers[0] := N and 255;
-  FNumbers[1] := (N shr 8) and 255;
-  FNumbers[2] := (N shr 16) and 255;
-  FNumbers[3] := N shr 24;
-end;
-
-constructor TBigInteger.Create(N: Int64);
-begin
-  FSign := N > 0;
-  N := Abs(N);
-  SetLength(FNumbers, 8);
-  FNumbers[0] := N and 255;
-  FNumbers[1] := (N shr 8) and 255;
-  FNumbers[2] := (N shr 16) and 255;
-  FNumbers[3] := (N shr 24) and 255;
-  FNumbers[4] := (N shr 32) and 255;
-  FNumbers[5] := (N shr 40) and 255;
-  FNumbers[6] := (N shr 48) and 255;
-  FNumbers[7] := N shr 56;
-end;
-
-constructor TBigInteger.Create(const BI: TBigInteger);
-begin
-  FSign := BI.FSign;
-  FNumbers := Copy(BI.FNumbers, 0, Length(BI.FNumbers));
-end;
-
-function TBigInteger.Divide(const Par: TBigInteger): TBigInteger;
-begin
-  Exit(DivideBase(Par));
-end;
-
-function TBigInteger.DivideBase(const Par: TBigInteger; const Module: TBigInteger): TBigInteger;
-var
-  l, i, n: Integer;
-  Temp, Dividend: TBigInteger;
-begin
-  Normalize;
-  Par.Normalize;
-  FSign := FSign = Par.FSign;
-  l := Length(FNumbers) - Length(Par.FNumbers) + 1;
-  if l < 1 then
-  begin
-    if Module <> nil then
-    begin
-      Module.CopyValue(Self);
-    end;
-    Exit(Zero);
-  end;
-  Temp := TBigInteger.Create;
-  Dividend := TBigInteger.Create;
-  try
-    Dividend.CopyValue(Self);
-    SetLength(FNumbers, l);
-    Temp.CopyValue(Par).ShiftL(l - 1);
-    for i := l - 1 downto 0 do
-    begin
-      n := 0;
-      while Dividend.GreaterThan(Temp) do
-      begin
-        Dividend.AbsSub(Temp);
-        Inc(n);
-      end;
-      FNumbers[i] := n;
-      Temp.ShiftR(1);
-    end;
-    if Module <> nil then
-    begin
-      Module.CopyValue(Dividend);
-    end;
-  finally
-    FreeAndNil(Temp);
-    FreeAndNil(Dividend);
-  end;
-  Exit(Self);
-end;
-
-function TBigInteger.Equal(const Par: TBigInteger): Boolean;
-var
-  i: Integer;
-begin
-  Normalize;
-  Par.Normalize;
-  if FSign <> Par.FSign then
-  begin
-    Exit(False);
-  end;
-  for i := 0 to Length(FNumbers) - 1 do  if FNumbers[i] <> Par.FNumbers[i] then
-  begin
-    Exit(False);
-  end;
-  Exit(True);
-end;
-
-function TBigInteger.FromString16(Str: string): Boolean;
-var
-  i, l: Integer;
-begin
-  if Str = '' then
-  begin
-    Exit(False);
-  end;
-  Str := UpperCase(Str);
-  l := Str.Length;
-  if Str.Chars[0] = '-' then
-  begin
-    if l <= 1 then
-    begin
-      Exit(False);
-    end;
-    for i := 1 to l - 1 do if GetHexVal(Str.Chars[i]) = 255 then
-    begin
-      Exit(False);
-    end;
-    FSign := False;
-    SetLength(FNumbers, l div 2);
-    for i := 0 to l div 2 - 1 do
-    begin
-      if 2 * i > l - 2 then
-      begin
-        FNumbers[i] := GetHexVal(Str.Chars[l - 1 - 2 * i]);
-      end
-      else
-      begin
-        FNumbers[i] := GetHexVal(Str.Chars[l - 1 - 2 * i]) + 16 * GetHexVal(Str.Chars[l - 2 - 2 * i]);
-      end;
-    end;
-  end
-  else
-  begin
-    if l <= 0 then
-    begin
-      Exit(False);
-    end;
-    for i := 0 to l - 1 do
-    begin
-      if GetHexVal(Str.Chars[i]) = 255 then
-      begin
-        Exit(False);
-      end;
-    end;
-    FSign := True;
-    SetLength(FNumbers, (l + 1) div 2);
-    for i := 0 to (l + 1) div 2 - 1 do
-    begin
-      if 2 * i > l - 1 then
-      begin
-        FNumbers[i] := GetHexVal(Str.Chars[l - 1 - 2 * i]);
-      end
-      else
-      begin
-        FNumbers[i] := GetHexVal(Str.Chars[l - 1 - 2 * i]) + 16 * GetHexVal(Str.Chars[l - 2 - 2 * i]);
-      end;
-    end;
-  end;
-  Normalize;
-  Exit(True);
-end;
-
-function TBigInteger.GreaterThan(const Par: TBigInteger): Boolean;
-begin
-  Normalize;
-  Par.Normalize;
-  if FSign and not Par.FSign then
-  begin
-    Exit(True);
-  end
-  else if not FSign and Par.FSign then
-  begin
-    Exit(False);
-  end
-  else if FSign and Par.FSign then
-  begin
-    Exit(AbsGreater(Par));
-  end
-  else
-  begin
-    Exit(AbsLess(Par));
-  end;   
-  Exit(False);
-end;
-
-function TBigInteger.IsEven: Boolean;
-begin
-  Exit((Length(FNumbers) > 0) and (FNumbers[0] and 1 = 0));
-end;
-
-function TBigInteger.IsOdd: Boolean;
-begin
-  Exit((Length(FNumbers) > 0) and (FNumbers[0] and 1 = 1));
-end;
-
-function TBigInteger.IsZero: Boolean;
-var
-  i: Integer;
-begin
-  for i := Length(FNumbers) - 1 downto 0 do if FNumbers[i] <> 0 then
-  begin
-    Exit(False);
-  end;
-  Exit(True);
-end;
-
-function TBigInteger.LessThan(const Par: TBigInteger): Boolean;
-begin
-  Normalize;
-  Par.Normalize;
-  if FSign and not Par.FSign then
-  begin
-    Exit(False);
-  end
-  else if not FSign and Par.FSign then
-  begin
-    Exit(True);
-  end
-  else if FSign and Par.FSign then
-  begin
-    Exit(AbsLess(Par));
-  end
-  else
-  begin
-    Exit(AbsGreater(Par));
-  end;
-  Exit(False);
-end;
-
-function TBigInteger.Module(const Par: TBigInteger): TBigInteger;
-var
-  Temp: TBigInteger;
-begin
-  Temp := TBigInteger.Create;
-  try
-    DivideBase(Par, Temp).CopyValue(Temp);
-  finally
-    FreeAndNil(Temp);
-  end;
-  Exit(Self);
-end;
-
-function TBigInteger.MultiplyDNC(const Par: TBigInteger; const Devided: Boolean): TBigInteger;
-var
-  ALI, BLI, CLI, DLI, XLI, YLI: TBigInteger;
-  i, n: Integer;
-  S: Boolean;
-begin
-  Normalize;
-  Par.Normalize;
-  if IsZero or Par.IsZero then
-  begin
-    Zero;
-    Exit(Self);
-  end;
-  if (Length(FNumbers) shl 1 <= Length(Par.FNumbers)) or (Length(Par.FNumbers) shl 1 <= Length(FNumbers)) then
-  begin
-    Exit(MultiplyBase(Par));
-  end;
-  ALI := TBigInteger.Create;
-  BLI := TBigInteger.Create;
-  CLI := TBigInteger.Create;
-  DLI := TBigInteger.Create;
-  XLI := TBigInteger.Create;
-  YLI := TBigInteger.Create;
-  try
-    S := FSign = Par.FSign;
-    if Length(FNumbers) < Length(Par.FNumbers) then
-    begin
-      n := (Length(Par.FNumbers) + 1) shr 1;
-    end
-    else
-    begin
-      n := (Length(FNumbers) + 1) shr 1;
-    end;
-    SetLength(ALI.FNumbers, n);
-    SetLength(BLI.FNumbers, n);
-    SetLength(CLI.FNumbers, n);
-    SetLength(DLI.FNumbers, n);
-    for i := 0 to n - 1 do
-    begin
-      if i < Length(FNumbers) then
-      begin
-        BLI.FNumbers[i] := FNumbers[i];
-      end
-      else
-      begin
-        BLI.FNumbers[i] := 0;
-      end;
-      if i < Length(Par.FNumbers) then
-      begin
-        DLI.FNumbers[i] := Par.FNumbers[i];
-      end
-      else
-      begin
-        DLI.FNumbers[i] := 0;
-      end;
-    end;
-    for i := n to n shl 1 do
-    begin
-      if i < Length(FNumbers) then
-      begin
-        ALI.FNumbers[i - n] := FNumbers[i];
-      end
-      else
-      begin
-        ALI.FNumbers[i - n] := 0;
-      end;
-      if i < Length(Par.FNumbers) then
-      begin
-        CLI.FNumbers[i - n] := Par.FNumbers[i];
-      end
-      else
-      begin
-        CLI.FNumbers[i - n] := 0;
-      end;
-    end;
-    if Devided then
-    begin
-      XLI.CopyValue(ALI).MultiplyBase(CLI);
-      YLI.CopyValue(BLI).MultiplyBase(DLI);
-      CopyValue(ALI.Subtract(BLI)).MultiplyBase(DLI.Subtract(CLI)).Add(XLI)
-        .Add(YLI).ShiftL(n).Add(YLI).Add(XLI.ShiftL(n shl 1));
-    end
-    else
-    begin
-      XLI.CopyValue(ALI).MultiplyDNC(CLI, True);
-      YLI.CopyValue(BLI).MultiplyDNC(DLI, True);
-      CopyValue(ALI.Subtract(BLI)).MultiplyDNC(DLI.Subtract(CLI), True).Add(XLI)
-        .Add(YLI).ShiftL(n).Add(YLI).Add(XLI.ShiftL(n shl 1));
-    end;
-  finally
-    FreeAndNil(ALI);
-    FreeAndNil(BLI);
-    FreeAndNil(CLI);
-    FreeAndNil(DLI);
-    FreeAndNil(XLI);
-    FreeAndNil(YLI);
-  end;
-  FSign := S;
-  Normalize;
-  Exit(Self);
-end;
-
-function TBigInteger.MultiplyBase(const Par: TBigInteger): TBigInteger;
-var
-  i, j, l, l1, l2: Integer;
-  TempArray: TArray<Byte>;
-  Temp: Word;
-  Carry, Value: Byte;
-begin
-  Normalize;
-  Par.Normalize;
-  FSign := FSign = Par.FSign;
-  l1 := Length(FNumbers);
-  l2 := Length(Par.FNumbers);
-  SetLength(TempArray, l1);
-  for i := 0 to l1 - 1 do
-  begin
-    TempArray[i] := FNumbers[i];
-    FNumbers[i] := 0;
-  end;
-  l := l1 + Length(Par.FNumbers) - 1;
-  SetLength(FNumbers, l);
-  for i := 0 to l1 - 1 do
-  begin
-    Carry := 0;
-    for j := 0 to l2 - 1 do
-    begin
-      Temp := TempArray[i] * Par.FNumbers[j] + FNumbers[i + j] + Carry;
-      Value := Temp and 255;
-      Carry := Temp shr 8;
-      FNumbers[i + j] := Value;
-    end;
-    FNumbers[i + l2] := Carry;
-  end;
-  Normalize;
-  Exit(Self);
-end;
-
-function TBigInteger.MultiplyFFT(const Par: TBigInteger): TBigInteger;
-var
-  Bit, NumLength, i: Integer;
-  RevList: TArray<Integer>;
-  ComplexA, ComplexB: TArray<TComplex>;
-  S: Boolean;
-begin
-  Normalize;
-  Par.Normalize;
-  if IsZero or Par.IsZero then
-  begin
-    Zero;
-    Exit(Self);
-  end;
-  S := not (FSign xor Par.FSign);
-  Bit := 1;
-  NumLength := 2;
-  while (1 shl bit) < Length(FNumbers) + Length(Par.FNumbers) - 1 do
-  begin
-    NumLength := NumLength shl 1;
-    Bit := Bit + 1;
-  end;
-  SetLength(ComplexA, NumLength);
-  SetLength(ComplexB, NumLength);
-  GetReverseList(RevList, Bit);
-  FFTBytes(FNumbers, ComplexA, RevList, NumLength);
-  FFTBytes(Par.FNumbers, ComplexB, RevList, NumLength);
-  for i := 0 to NumLength - 1 do
-  begin
-    ComplexA[i] := ComplexA[i] * ComplexB[i];
-  end;
-  IFFTBytes(FNumbers, ComplexA, RevList, NumLength);
-  FSign := S;
-  Normalize;
-  Exit(Self);
-end;
-
-function TBigInteger.Negative: TBigInteger;
-begin
-  Normalize;
-  FSign := not FSign;
-  Exit(Self);
-end;
-
-function TBigInteger.Normalize: TBigInteger;
-var
-  i, l: Integer;
-begin
-  l := Length(FNumbers);
-  for i := l downto 0 do
-  begin
-    if (i > 0) and (FNumbers[i - 1] > 0) then
-    begin
-      SetLength(FNumbers, i);
-      Break;
-    end
-    else if i = 0 then
-    begin
-      Zero;
-    end;
-  end;
-  Exit(Self);
-end;
-
-function TBigInteger.Positive: TBigInteger;
-begin
-  Normalize;
-  Exit(Self);
-end;
-
-function TBigInteger.PowAndModBase(const Par, Module: TBigInteger): TBigInteger;
-var
-  Base, Power: TBigInteger;
-begin
-  if Par.IsZero or not Par.FSign then
-  begin
-    raise EPowerError.Create('Error Message: Power index must be greater than ZERO!');
-  end;
-  if Module.IsZero then
-  begin
-    raise EZeroError.Create('Error Message: Cannot divide ZERO!');
-  end;
-  Base := TBigInteger.Create(Self);
-  Power := TBigInteger.Create(Par);
-  SetLength(FNumbers, 1);
-  FNumbers[0] := 1;
-  try
-    while Power.FSign and not Power.IsZero do
-    begin
-      if Power.FNumbers[0] and 1 = 1 then
-      begin
-        MultiplyBase(Base).Module(Module);
-      end;
-      Power.ShiftR(1);
-      Base.MultiplyBase(Base).Module(Module);
-    end;
-  finally
-    Base.DisposeOf;
-    Power.DisposeOf;
-  end;
-  Exit(Self);
-end;
-
-function TBigInteger.PowAndModDNC(const Par, Module: TBigInteger): TBigInteger;
-var
-  Base, Power: TBigInteger;
-begin
-  if Par.IsZero or not Par.FSign then
-  begin
-    raise EPowerError.Create('Error Message: Power index must be greater than ZERO!');
-  end;
-  if Module.IsZero then
-  begin
-    raise EZeroError.Create('Error Message: Cannot divide ZERO!');
-  end;
-  Base := TBigInteger.Create(Self);
-  Power := TBigInteger.Create(Par);
-  SetLength(FNumbers, 1);
-  FNumbers[0] := 1;
-  try
-    while Power.FSign and not Power.IsZero do
-    begin
-      if Power.FNumbers[0] and 1 = 1 then
-      begin
-        MultiplyDNC(Base).Module(Module);
-      end;
-      Power.ShiftR(1);
-      Base.MultiplyDNC(Base).Module(Module);
-    end;
-  finally
-    Base.DisposeOf;
-    Power.DisposeOf;
-  end;
-  Exit(Self);
-end;
-
-function TBigInteger.PowAndModFFT(const Par, Module: TBigInteger): TBigInteger;
-var
-  Base, Power: TBigInteger;
-begin
-  if Par.IsZero or not Par.FSign then
-  begin
-    raise EPowerError.Create('Error Message: Power index must be greater than ZERO!');
-  end;
-  if Module.IsZero then
-  begin
-    raise EZeroError.Create('Error Message: Cannot divide ZERO!');
-  end;
-  Base := TBigInteger.Create(Self);
-  Power := TBigInteger.Create(Par);
-  SetLength(FNumbers, 1);
-  FNumbers[0] := 1;
-  try
-    while Power.FSign and not Power.IsZero do
-    begin
-      if Power.FNumbers[0] and 1 = 1 then
-      begin
-        MultiplyFFT(Base).Module(Module);
-      end;
-      Power.ShiftR(1);
-      Base.MultiplyFFT(Base).Module(Module);
-    end;
-  finally
-    Base.DisposeOf;
-    Power.DisposeOf;
-  end;
-  Exit(Self);
-end;
-
-function TBigInteger.ShiftL(const Value: Integer): TBigInteger;
-var
-  Temp: TArray<Byte>;
-begin
-  if Value > 0 then
-  begin
-    SetLength(Temp, Value);
-    Insert(Temp, FNumbers, 0);
-  end;
-  Exit(Self);
-end;
-
-function TBigInteger.ShiftR(const Value: Integer): TBigInteger;
-begin
-  if Value > 0 then
-  begin
-    Delete(FNumbers, 0, Value);
-  end;
-  Exit(Self);
-end;
-
-function TBigInteger.Subtract(const Par: TBigInteger): TBigInteger;
-begin
-  if FSign = Par.FSign then
-  begin
-    Exit(AbsSub(Par));
-  end
-  else
-  begin
-    Exit(AbsSub(Par));
-  end;
-end;
-
-function TBigInteger.Zero: TBigInteger;
-begin
-  SetLength(FNumbers, 1);
-  FNumbers[0] := 0;
   Exit(Self);
 end;
 
