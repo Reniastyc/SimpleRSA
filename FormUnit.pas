@@ -42,54 +42,100 @@ implementation
 {$R *.fmx}
 
 procedure TForm1.Button1Click(Sender: TObject);
+{
 var
-  LI1, LI2, LI3, LI4, LI5: THexInt;
+  LR1, LR2, LR3: TLongReal;
   s: string;
+begin
+  Memo1.Lines.Clear;
+  LR1 := TLongReal.Create;
+  LR2 := TLongReal.Create;
+  LR3 := TLongReal.Create;
+  try
+    LR1.FromStringDot(Edit1.Text);
+    LR2.FromStringDot(Edit2.Text);
+    s := LR3.CopyVal(LR1).Add(LR2).ToStringDot;
+    Memo1.Lines.Add(s);
+    s := LR3.CopyVal(LR1).Subtract(LR2).ToStringDot;
+    Memo1.Lines.Add(s);
+    s := LR3.CopyVal(LR1).Multiply(LR2).ToStringDot;
+    Memo1.Lines.Add(s);
+    s := LR3.CopyVal(LR1).Divide(LR2).ToStringDot;
+    Memo1.Lines.Add(s);
+  finally
+    FreeAndNil(LR1);
+    FreeAndNil(LR2);
+    FreeAndNil(LR3);
+  end;
+end;
+}
+var
+  LI1, LI2, LI3, LI4, LI5: TLongInteger;
+  s1, s2, s: string;
   t1, t2: Integer;
 begin
   Memo1.Lines.Clear;
-  LI1.DecValue := Edit1.Text;
-  LI2.DecValue := Edit2.Text;
-  LI3.DecValue := Edit3.Text;
-  LI4 := LI1 + LI2;
-  s := Format('%s + %s = %s', [LI1.DecValue, LI2.DecValue, LI4.DecValue]);
-  Memo1.Lines.Add(s);
-  LI4 := LI1 - LI2;
-  s := Format('%s - %s = %s', [LI1.DecValue, LI2.DecValue, LI4.DecValue]);
-  Memo1.Lines.Add(s);
-  t1 := TThread.GetTickCount;
-  LI4 := LI1 * LI2;
-  s := Format('%s * %s = %s', [LI1.DecValue, LI2.DecValue, LI4.DecValue]);
-  Memo1.Lines.Add(s);
-  t2 := TThread.GetTickCount;
-  Memo1.Lines.Add(Format('FFT Time: %d', [t2 - t1]));
+  Edit1.Text := Edit1.Text.Replace(' ', '');
+  Edit2.Text := Edit2.Text.Replace(' ', '');
+  Edit3.Text := Edit3.Text.Replace(' ', '');
+  Li1 := TLongInteger.Create;
+  Li2 := TLongInteger.Create;
+  Li3 := TLongInteger.Create;
+  Li4 := TLongInteger.Create;
+  Li5 := TLongInteger.Create;
   try
-    LI4 := LI1 div LI2;
-    LI5 := LI1 mod LI2;
-    s := Format('%s / %s = %s ...... %s', [LI1.DecValue, LI2.DecValue, LI4.DecValue, LI5.DecValue]);
+    LI1.FromString10(Edit1.Text);
+    LI2.FromString10(Edit2.Text);
+    LI3.FromString10(Edit3.Text);
+    s1 := LI4.CopyVal(LI1).Add(LI2).ToString10;
+    s := Format('%s + %s = %s', [Edit1.Text, Edit2.Text, s1]);
     Memo1.Lines.Add(s);
-  except
-    on EZeroError do
-    begin
-      Memo1.Lines.Add('Error Message: Cannot divide ZERO!');
-    end;
-  end;
-  try
+    s1 := LI4.CopyVal(LI1).Subtract(LI2).ToString10;
+    s := Format('%s - %s = %s', [Edit1.Text, Edit2.Text, s1]);
+    Memo1.Lines.Add(s);
     t1 := TThread.GetTickCount;
-    LI4 := LI1.PowAndMod(LI2, LI3);
-    s := Format('%s ^ %s %% %s = %s', [LI1.DecValue, LI2.DecValue, LI3.DecValue, LI4.DecValue]);
+    s1 := LI4.CopyVal(LI1).Multiply(LI2).ToString10;
+    s := Format('%s * %s = %s', [Edit1.Text, Edit2.Text, s1]);
     Memo1.Lines.Add(s);
     t2 := TThread.GetTickCount;
-    Memo1.Lines.Add(Format('FFT Time: %d', [t2 - t1]));
-  Except
-    on EZeroError do
-    begin
-      Memo1.Lines.Add('Error Message: Cannot divide ZERO!');
+    Memo1.Lines.Add(Format('Multiply Time: %d', [t2 - t1]));
+    try
+      t1 := TThread.GetTickCount;
+      s1 := LI4.CopyVal(LI1).DivAndMod(LI2, LI5).ToString10;
+      s2 := LI5.ToString10;
+      s := Format('%s / %s = %s ...... %s', [Edit1.Text, Edit2.Text, s1, s2]);
+      Memo1.Lines.Add(s);
+      t2 := TThread.GetTickCount;
+      Memo1.Lines.Add(Format('Divide Time: %d', [t2 - t1]));
+    except
+      on EZeroError do
+      begin
+        Memo1.Lines.Add('Error Message: Cannot divide ZERO!');
+      end;
     end;
-    on EPowerError do
-    begin
-      Memo1.Lines.Add('Error Message: Power index must be greater than ZERO!');
+    try
+      t1 := TThread.GetTickCount;
+      s1 := LI4.CopyVal(LI1).PowAndMod(LI2, LI3).ToString10;
+      s := Format('%s ^ %s %% %s = %s', [Edit1.Text, Edit2.Text, Edit3.Text, s1]);
+      Memo1.Lines.Add(s);
+      t2 := TThread.GetTickCount;
+      Memo1.Lines.Add(Format('Power Time: %d', [t2 - t1]));
+    Except
+      on EZeroError do
+      begin
+        Memo1.Lines.Add('Error Message: Cannot divide ZERO!');
+      end;
+      on EPowerError do
+      begin
+        Memo1.Lines.Add('Error Message: Power index must be greater than ZERO!');
+      end;
     end;
+  finally
+    FreeAndNil(LI1);
+    FreeAndNil(LI2);
+    FreeAndNil(LI3);
+    FreeAndNil(LI4);
+    FreeAndNil(LI5);
   end;
 end;
 

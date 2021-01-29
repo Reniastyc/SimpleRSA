@@ -4,7 +4,7 @@
 {                                                       }
 {                    RdeEM Long                         }
 {                     大数单元                          }
-{                     ver 1.20                          }
+{                     ver 1.21                          }
 {                                                       }
 {    Copyright(c) 2018-2019 Reniasty de El Magnifico    }
 {                   天道玄虚 出品                       }
@@ -27,60 +27,42 @@ type
   TLongInteger = class;
   TLongReal = class;
 
-  TComplex = record
+  TComplexMA = record
   private
     FM: Double; // 模數
     FA: Double; // 輻角
   public
-    class function Create(const Modulus, Argument: Double): TComplex; static;
-    class operator Multiply(const C1, C2: TComplex): TComplex; overload;
-    class operator Multiply(const C1: TComplex; const C2: Double): TComplex; overload;
-    class operator Divide(const C1, C2: TComplex): TComplex; overload;
-    class operator Divide(const C1: TComplex; const C2: Double): TComplex; overload;
-    class operator Add(const C1, C2: TComplex): TComplex;
-    class operator Subtract(const C1, C2: TComplex): TComplex;
+    class function Create(const Modulus, Argument: Double): TComplexMA; static; inline;
+    class operator Multiply(const C1, C2: TComplexMA): TComplexMA; overload;
+    class operator Multiply(const C1: TComplexMA; const C2: Double): TComplexMA; overload;
+    class operator Divide(const C1, C2: TComplexMA): TComplexMA; overload;
+    class operator Divide(const C1: TComplexMA; const C2: Double): TComplexMA; overload;
+    class operator Add(const C1, C2: TComplexMA): TComplexMA;
+    class operator Subtract(const C1, C2: TComplexMA): TComplexMA;
     function Modulus: Double;
     function Argument: Double;
     function Real: Double;
     function Imaginary: Double;
-    function Conjugate: TComplex;
+    function Conjugate: TComplexMA;
   end;
 
-  THexInt = record
+  TComplexRI = record
   private
-    FHex: string;
-    function GetHexValue: string;
-    function GetBinValue: string;
-    function GetDecValue: string;
-    procedure SetHexValue(const Value: string);
-    procedure SetBinValue(const Value: string);
-    procedure SetDecValue(const Value: string);
+    FR: Double; // 實部
+    FI: Double; // 虛部
   public
-    class function Create(const Str: string): THexInt; static;
-    // 正負運算
-    class operator Positive(const Hex1: THexInt): THexInt;
-    class operator Negative(const Hex1: THexInt): THexInt;
-    // 比較運算
-    class operator Equal(const Hex1, Hex2: THexInt): Boolean;
-    class operator LessThan(const Hex1, Hex2: THexInt): Boolean;
-    class operator GreaterThan(const Hex1, Hex2: THexInt): Boolean;
-    class operator NotEqual(const Hex1, Hex2: THexInt): Boolean;
-    class operator LessThanOrEqual(const Hex1, Hex2: THexInt): Boolean;
-    class operator GreaterThanOrEqual(const Hex1, Hex2: THexInt): Boolean;
-    // 四則運算
-    class operator Add(const Hex1, Hex2: THexInt): THexInt;
-    class operator Subtract(const Hex1, Hex2: THexInt): THexInt;
-    class operator Multiply(const Hex1, Hex2: THexInt): THexInt;
-    class operator Divide(const Hex1, Hex2: THexInt): THexInt;
-    class operator IntDivide(const Hex1, Hex2: THexInt): THexInt;
-    class operator Modulus(const Hex1, Hex2: THexInt): THexInt;
-    // 其他功能
-    function Power(const Hex1: THexInt): THexInt;
-    function PowAndMod(const Hex1, Hex2: THexInt): THexInt;
-    // 屬性
-    property BinValue: string          read GetBinValue         write SetBinValue;
-    property DecValue: string          read GetDecValue         write SetDecValue;
-    property HexValue: string          read GetHexValue         write SetHexValue;
+    class function Create(const Real, Imaginary: Double): TComplexRI; static; inline;
+    class operator Multiply(const C1, C2: TComplexRI): TComplexRI; overload;
+    class operator Multiply(const C1: TComplexRI; const C2: Double): TComplexRI; overload;
+    class operator Divide(const C1, C2: TComplexRI): TComplexRI; overload;
+    class operator Divide(const C1: TComplexRI; const C2: Double): TComplexRI; overload;
+    class operator Add(const C1, C2: TComplexRI): TComplexRI;
+    class operator Subtract(const C1, C2: TComplexRI): TComplexRI;
+    function Modulus: Double;
+    function Argument: Double;
+    function Real: Double;
+    function Imaginary: Double;
+    function Conjugate: TComplexRI;
   end;
 
   TLongInteger = class
@@ -88,10 +70,16 @@ type
     FSymb: Boolean; // 符号位，True代表正数。
     FNumL: TArray<Boolean>;
     function AbsAdd(const Par: TLongInteger): TLongInteger;
-    function AbsSub(const Par: TLongInteger): TLongInteger;
+    function AbsSub(const Par: TLongInteger; const ChangeSymbol: Boolean = True): TLongInteger;
+      // AbsSub計算原數之絕對值與參數之絕對值的差值
+      // 當ChangeSymbol爲True時，會在原數之絕對值小於參數之絕對值的情況下改變原數的符號
+      // 當ChangeSymbol爲False時，則不會改變符號，默認情況下會改變原數符號
     function Mut10PowN(N: TLongInteger): TLongInteger;
     function Div10PowN(N: TLongInteger): TLongInteger;
     function Normalize: TLongInteger;
+    function AbsEqual(Par: TLongInteger): Boolean;
+    function AbsLessThan(Par: TLongInteger): Boolean;
+    function AbsGreaterThan(Par: TLongInteger): Boolean;
   public
     constructor Create; overload;
     constructor Create(LI: TLongInteger); overload;
@@ -118,9 +106,9 @@ type
     function ToString16: string;
     function ToBytes: TBytes;
     function ToBytes16: TBytes;
-    function FromString2(Str: string): Boolean;
-    function FromString10(Str: string): Boolean;
-    function FromString16(Str: string): Boolean;
+    function FromString2(Str: string): TLongInteger;
+    function FromString10(Str: string): TLongInteger;
+    function FromString16(Str: string): TLongInteger;
     function FromInteger(N: Byte): TLongInteger; overload;
     function FromInteger(N: Word): TLongInteger; overload;
     function FromInteger(N: Cardinal): TLongInteger; overload;
@@ -158,13 +146,13 @@ type
   TLongReal = class // 用科學記數法記錄實數，Val = FCoe * Power(10, FExp)
   private
     FCoe: TLongInteger; // 係數
-    FExp: TLongInteger; // 指數
+    FExp: Integer; // 指數
     function Normalize: TLongReal;
   public
     constructor Create; overload;
     constructor Create(LR: TLongReal); overload;
     constructor Create(Coe: TLongInteger); overload;
-    constructor Create(Coe, Exp: TLongInteger); overload;
+    constructor Create(Coe: TLongInteger; Exp: Integer); overload;
     destructor Destroy; override;
     // 複製
     function CopyVal(const Par: TLongReal): TLongReal;
@@ -185,27 +173,35 @@ type
     function Add(const Par: TLongReal): TLongReal;
     function Subtract(const Par: TLongReal): TLongReal;
     function Multiply(const Par: TLongReal): TLongReal;
-    function Divide(const Par: TLongReal; Digit: Cardinal = 5): TLongReal;
+    function Divide(const Par: TLongReal; Digit: Integer = 5): TLongReal;
       // Digit代表額外的位數。取0則相當於對兩數的係數部份做整數除法，取x則相當於保留x位小數
     // 轉換（僅支持無小數點之科學記數法的轉換）
     function ToStringOri: string;
-    function FromStringOri(Str: string): Boolean;
+    function ToStringDot :string;
+    function FromStringOri(Str: string): TLongReal;
+    function FromStringDot(Str: string): TLongReal;
     function FromInteger(Coe, Exp: Integer): TLongReal; overload;
     function FromInteger(Coe, Exp: Int64): TLongReal; overload;
   end;
 
+  // 字符與數值互換
   function GetHexChr(N: Byte): Char;
   function GetHexVal(C: Char): Byte;
   function GetDecChr(N: Byte): Char;
   function GetDecVal(C: Char): Byte;
 
+  // 複數變換相關
+  function ComplexMA(const Modulus, Argument: Double): TComplexMA; inline; overload;
+  function ComplexMA(const ComplexRI: TComplexRI): TComplexMA; inline; overload;
+  function ComplexRI(const Real, Imaginary: Double): TComplexRI; inline; overload;
+  function ComplexRI(const ComplexMA: TComplexMA): TComplexRI; inline; overload;
 
+  // 傅利葉變換相關
   function GetReverseList(var Reverse: TArray<Integer>; Bit: Integer): Boolean;
-
-  function FFT(var Complex: TArray<TComplex>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
-  function IFFT(var Complex: TArray<TComplex>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
-  function FFTBytes(const B: TBytes; var Com: TArray<TComplex>; var Rev: TArray<Integer>; Count: Integer): Boolean;
-  function IFFTBytes(var B: TBytes; var Com: TArray<TComplex>; var Rev: TArray<Integer>; Count: Integer): Boolean;
+  function FFT(var Complex: TArray<TComplexMA>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
+  function IFFT(var Complex: TArray<TComplexMA>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
+  function FFTBytes(const B: TBytes; var Com: TArray<TComplexMA>; var Rev: TArray<Integer>; Count: Integer): Boolean;
+  function IFFTBytes(var B: TBytes; var Com: TArray<TComplexMA>; var Rev: TArray<Integer>; Count: Integer): Boolean;
 
 implementation
 
@@ -293,6 +289,30 @@ begin
   end;
 end;
 
+function ComplexMA(const Modulus, Argument: Double): TComplexMA;
+begin
+  Result.FM := Modulus;
+  Result.FA := Argument;
+end;
+
+function ComplexMA(const ComplexRI: TComplexRI): TComplexMA;
+begin
+  Result.FM := ComplexRI.Modulus;
+  Result.FA := ComplexRI.Argument;
+end;
+
+function ComplexRI(const Real, Imaginary: Double): TComplexRI;
+begin
+  Result.FR := Real;
+  Result.FI := Imaginary;
+end;
+
+function ComplexRI(const ComplexMA: TComplexMA): TComplexRI;
+begin
+  Result.FR := ComplexMA.Real;
+  Result.FI := ComplexMA.Imaginary;
+end;
+
 function GetReverseList(var Reverse: TArray<Integer>; Bit: Integer): Boolean;
 var
   i: Integer;
@@ -309,10 +329,11 @@ begin
   Exit(True);
 end;
 
-function FFT(var Complex: TArray<TComplex>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
+function FFT(var Complex: TArray<TComplexMA>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
 var
   i, j, k, step: Integer;
-  v, x, y, wnk: TComplex;
+  v, wnk: TComplexMA;
+  x, y: TComplexRI;
 begin
   if (Complex = nil) or (Reverse = nil) or (Count < 1) then
   begin
@@ -332,11 +353,11 @@ begin
     begin
       for k := j to j + step - 1 do
       begin
-        wnk := TComplex.Create(1, (k - j) * PI / step);
-        x := Complex[k];
-        y := wnk * Complex[k + step];
-        Complex[k] := x + y;
-        Complex[k + step] := x - y;
+        wnk := TComplexMA.Create(1, (k - j) * PI / step);
+        x := ComplexRI(Complex[k]);
+        y := ComplexRI(wnk * Complex[k + step]);
+        Complex[k] := ComplexMA(x + y);
+        Complex[k + step] := ComplexMA(x - y);
       end;
       j := j + step shl 1;
     end;
@@ -345,10 +366,11 @@ begin
   Exit(True);
 end;
 
-function IFFT(var Complex: TArray<TComplex>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
+function IFFT(var Complex: TArray<TComplexMA>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
 var
   i, j, k, step: Integer;
-  v, x, y, wnk: TComplex;
+  v, wnk: TComplexMA;
+  x, y: TComplexRI;
 begin
   if (Complex = nil) or (Reverse = nil) or (Length(Complex) <> Count) then
   begin
@@ -368,12 +390,11 @@ begin
     begin
       for k := j to j + step - 1 do
       begin
-        wnk := TComplex.Create(1, (j - k) * PI / step);
-        // wnk := VarComplexCreate(Cos((j - k) * PI / step), Sin((j - k) * PI / step));
-        x := Complex[k];
-        y := wnk * Complex[k + step];
-        Complex[k] := x + y;
-        Complex[k + step] := x - y;
+        wnk := TComplexMA.Create(1, (j - k) * PI / step);
+        x := ComplexRI(Complex[k]);
+        y := ComplexRI(wnk * Complex[k + step]);
+        Complex[k] := ComplexMA(x + y);
+        Complex[k + step] := ComplexMA(x - y);
       end;
       j := j + step shl 1;
     end;
@@ -386,7 +407,7 @@ begin
   Exit(True);
 end;
 
-function FFTBytes(const B: TBytes; var Com: TArray<TComplex>; var Rev: TArray<Integer>; Count: Integer): Boolean;
+function FFTBytes(const B: TBytes; var Com: TArray<TComplexMA>; var Rev: TArray<Integer>; Count: Integer): Boolean;
 var
   i: Integer;
 begin
@@ -397,17 +418,17 @@ begin
   SetLength(Com, Count);
   for i := 0 to Length(B) - 1 do
   begin
-    Com[i] := TComplex.Create(B[i], 0);
+    Com[i] := TComplexMA.Create(B[i], 0);
   end;
   for i := Length(B) to Count - 1 do
   begin
-    Com[i] := TComplex.Create(0, 0);
+    Com[i] := TComplexMA.Create(0, 0);
   end;
   FFT(Com, Rev, Count);
   Exit(True);
 end;
 
-function IFFTBytes(var B: TBytes; var Com: TArray<TComplex>; var Rev: TArray<Integer>; Count: Integer): Boolean;
+function IFFTBytes(var B: TBytes; var Com: TArray<TComplexMA>; var Rev: TArray<Integer>; Count: Integer): Boolean;
 var
   i, j, k: Integer;
 begin
@@ -438,8 +459,6 @@ var
   C, X, Y: Boolean;
   i, l: Integer;
 begin
-  Normalize;
-  Par.Normalize;
   C := False;
   l := Max(Length(FNumL), Length(Par.FNumL));
   SetLength(FNumL, l + 1);
@@ -466,27 +485,23 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.AbsSub(const Par: TLongInteger): TLongInteger;
+function TLongInteger.AbsSub(const Par: TLongInteger; const ChangeSymbol: Boolean): TLongInteger;
 var
   C, X, Y, G: Boolean;
   i, l: Integer;
 begin
-  Normalize;
-  Par.Normalize;
-  if Equal(Par) then
-  begin
-    Zero;
-    Exit(Self);
-  end;
   C := False;
-  if GreaterThan(Par) then
+  if AbsGreaterThan(Par) then
   begin
     G := True;
   end
   else
   begin
     G := False;
-    FSymb := not FSymb;
+    if ChangeSymbol then
+    begin
+      FSymb := not FSymb;
+    end;
   end;
   l := Max(Length(FNumL), Length(Par.FNumL));
   SetLength(FNumL, l);
@@ -531,6 +546,79 @@ begin
   Exit(Self);
 end;
 
+function TLongInteger.AbsEqual(Par: TLongInteger): Boolean;
+var
+  i: Integer;
+begin
+  Normalize;
+  Par.Normalize;
+  if Length(FNumL) <> Length(Par.FNumL) then
+  begin
+    Exit(False);
+  end;
+  for i := 0 to Length(FNumL) - 1 do if FNumL[i] <> Par.FNumL[i] then
+  begin
+    Exit(False);
+  end;
+  Exit(True);
+end;
+
+function TLongInteger.AbsGreaterThan(Par: TLongInteger): Boolean;
+var
+  i: Integer;
+begin
+  Normalize;
+  Par.Normalize;
+  if Length(FNumL) > Length(Par.FNumL) then
+  begin
+    Exit(True);
+  end;
+  if Length(FNumL) < Length(Par.FNumL) then
+  begin
+    Exit(False);
+  end;
+  for i := Length(FNumL) - 1 downto 0 do
+  begin
+    if FNumL[i] and not Par.FNumL[i] then
+    begin
+      Exit(True);
+    end;
+    if not FNumL[i] and Par.FNumL[i] then
+    begin
+      Exit(False);
+    end;
+  end;
+  Exit(False);
+end;
+
+function TLongInteger.AbsLessThan(Par: TLongInteger): Boolean;
+var
+  i: Integer;
+begin
+  Normalize;
+  Par.Normalize;
+  if Length(FNumL) > Length(Par.FNumL) then
+  begin
+    Exit(False);
+  end;
+  if Length(FNumL) < Length(Par.FNumL) then
+  begin
+    Exit(True);
+  end;
+  for i := Length(FNumL) - 1 downto 0 do
+  begin
+    if FNumL[i] and not Par.FNumL[i] then
+    begin
+      Exit(False);
+    end;
+    if not FNumL[i] and Par.FNumL[i] then
+    begin
+      Exit(True);
+    end;
+  end;
+  Exit(False);
+end;
+
 function TLongInteger.AbsoluteVal: TLongInteger;
 begin
   FSymb := True;
@@ -539,9 +627,11 @@ end;
 
 function TLongInteger.Add(const Par: TLongInteger): TLongInteger;
 begin
+  Normalize;
+  Par.Normalize;
   if IsZero then
   begin
-    CopyVal(Par);
+    Exit(CopyVal(Par));
   end
   else if Par.IsZero then
   begin
@@ -549,13 +639,12 @@ begin
   end
   else if FSymb = Par.FSymb then
   begin
-    AbsAdd(Par);
+    Exit(AbsAdd(Par));
   end
   else
   begin
-    AbsSub(Par);
+    Exit(AbsSub(Par));
   end;
-  Exit(Self);
 end;
 
 function TLongInteger.CopyVal(const Par: TLongInteger): TLongInteger;
@@ -800,27 +889,12 @@ begin
 end;
 
 function TLongInteger.Equal(const Par: TLongInteger): Boolean;
-var
-  i: Integer;
 begin
-  Normalize;
-  Par.Normalize;
-  if FSymb <> Par.FSymb then
+  if Length(FNumL) = Length(Par.FNumL) then
   begin
-    Exit(False);
+    Exit(AbsEqual(Par));
   end;
-  if Length(FNumL) <> Length(Par.FNumL) then
-  begin
-    Exit(False);
-  end;
-  for i := 0 to Length(FNumL) - 1 do
-  begin
-    if FNumL[i] <> Par.FNumL[i] then
-    begin
-      Exit(False);
-    end;
-  end;
-  Exit(True);
+  Exit(False);
 end;
 
 function TLongInteger.FromBytes(B: TBytes): TLongInteger;
@@ -1021,34 +1095,34 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.FromString10(Str: string): Boolean;
+function TLongInteger.FromString10(Str: string): TLongInteger;
 var
   i, l: Integer;
   v: Byte;
   LI, Par: TLongInteger;
-  S: Boolean;
 begin
   if Str = '' then
   begin
-    Exit(False);
+    Exit(Zero);
   end;
+  Str := Str.Replace(' ', '');
   if Str.Chars[0] = '-' then
   begin
-    S := False;
+    FSymb := False;
     Str := Str.Substring(1);
   end
   else
   begin
-    S := True;
+    FSymb := True;
   end;
   l := Str.Length;
   if l <= 0 then
   begin
-    Exit(False);
+    Exit(Zero);
   end;
   for i := 0 to l - 1 do if GetDecVal(Str.Chars[i]) = 255 then
   begin
-    Exit(False);
+    Exit(Zero);
   end;
   Zero;
   LI := TLongInteger.Create;
@@ -1069,123 +1143,93 @@ begin
     FreeAndNil(LI);
     FreeAndNil(Par);
   end;
-  FSymb := S;
   Normalize;
-  Exit(True);
+  Exit(Self);
 end;
 
-function TLongInteger.FromString16(Str: string): Boolean;
+function TLongInteger.FromString16(Str: string): TLongInteger;
 var
   i, l: Integer;
   v: Byte;
 begin
   if Str = '' then
   begin
-    Exit(False);
+    Exit(Zero);
   end;
-  Str := UpperCase(Str);
+  Str := UpperCase(Str).Replace(' ', '');
   l := Str.Length;
   if Str.Chars[0] = '-' then
   begin
-    if l <= 1 then
-    begin
-      Exit(False);
-    end;
-    for i := 1 to l - 1 do if GetHexVal(Str.Chars[i]) = 255 then
-    begin
-      Exit(False);
-    end;
     FSymb := False;
-    SetLength(FNumL, 4 * l - 4);
-    for i := 0 to l - 2 do
-    begin
-      v := GetHexVal(Str.Chars[l - 1 - i]);
-      FNumL[4 * i] := (v and 1 = 1);
-      v := v shr 1;
-      FNumL[4 * i + 1] := (v and 1 = 1);
-      v := v shr 1;
-      FNumL[4 * i + 2] := (v and 1 = 1);
-      v := v shr 1;
-      FNumL[4 * i + 3] := (v and 1 = 1);
-    end;
+    Str := Str.Substring(1);
   end
   else
   begin
-    if l <= 0 then
-    begin
-      Exit(False);
-    end;
-    for i := 0 to l - 1 do
-    begin
-      if GetHexVal(Str.Chars[i]) = 255 then
-      begin
-        Exit(False);
-      end;
-    end;
     FSymb := True;
-    SetLength(FNumL, 4 * l);
-    for i := 0 to l - 1 do
+  end;
+  if l <= 0 then
+  begin
+    Exit(Zero);
+  end;
+  for i := 0 to l - 1 do
+  begin
+    if GetHexVal(Str.Chars[i]) = 255 then
     begin
-      v := GetHexVal(Str.Chars[l - 1 - i]);
-      FNumL[4 * i] := (v and 1 = 1);
-      v := v shr 1;
-      FNumL[4 * i + 1] := (v and 1 = 1);
-      v := v shr 1;
-      FNumL[4 * i + 2] := (v and 1 = 1);
-      v := v shr 1;
-      FNumL[4 * i + 3] := (v and 1 = 1);
+      Exit(Zero);
     end;
   end;
+  FSymb := True;
+  SetLength(FNumL, 4 * l);
+  for i := 0 to l - 1 do
+  begin
+    v := GetHexVal(Str.Chars[l - 1 - i]);
+    FNumL[4 * i] := (v and 1 = 1);
+    v := v shr 1;
+    FNumL[4 * i + 1] := (v and 1 = 1);
+    v := v shr 1;
+    FNumL[4 * i + 2] := (v and 1 = 1);
+    v := v shr 1;
+    FNumL[4 * i + 3] := (v and 1 = 1);
+  end;
   Normalize;
-  Exit(True);
+  Exit(Self);
 end;
 
-function TLongInteger.FromString2(Str: string): Boolean;
+function TLongInteger.FromString2(Str: string): TLongInteger;
 var
   i, l: Integer;
 begin
   if Str = '' then
   begin
-    Exit(False);
+    Exit(Zero);
   end;
-  Str := UpperCase(Str);
-  l := Str.Length;
+  Str := Str.Replace(' ', '');
   if Str.Chars[0] = '-' then
   begin
-    if l <= 1 then
-    begin
-      Exit(False);
-    end;
-    for i := 1 to l - 1 do if GetHexVal(Str.Chars[i]) > 1 then
-    begin
-      Exit(False);
-    end;
     FSymb := False;
-    SetLength(FNumL, l - 1);
-    for i := 0 to l - 2 do
-    begin
-      FNumL[i] := (Str.Chars[l - 1 - i] = '1');
-    end;
+    Str := Str.Substring(1);
   end
   else
   begin
-    if l <= 0 then
-    begin
-      Exit(False);
-    end;
-    for i := 0 to l - 1 do if GetHexVal(Str.Chars[i]) > 1 then
-    begin
-      Exit(False);
-    end;
     FSymb := True;
-    SetLength(FNumL, l);
-    for i := 0 to l - 1 do
-    begin
-      FNumL[i] := (Str.Chars[l - 1 - i] = '1');
-    end;
+  end;
+  l := Str.Length;
+  if l <= 0 then
+  begin
+    Exit(Zero);
+  end;
+  for i := 0 to l - 1 do if (Str.Chars[i] <> '0') or (Str.Chars[i] <> '1') then
+  begin
+    Exit(Zero);
+  end;
+  FSymb := True;
+  SetLength(FNumL, l);
+  for i := 0 to l - 1 do
+  begin
+    FNumL[i] := (Str.Chars[l - 1 - i] = '1');
   end;
   Normalize;
-  Exit(True);
+  Exit(Self);
 end;
 
 function TLongInteger.GetValue(Index: Integer): Boolean;
@@ -1194,11 +1238,7 @@ begin
 end;
 
 function TLongInteger.GreaterThan(const Par: TLongInteger): Boolean;
-var
-  i: Integer;
 begin
-  Normalize;
-  Par.Normalize;
   if FSymb and not Par.FSymb then
   begin
     Exit(True);
@@ -1207,26 +1247,14 @@ begin
   begin
     Exit(False);
   end;
-  if Length(FNumL) > Length(Par.FNumL) then
+  if FSymb and Par.FSymb then
   begin
-    Exit(True);
-  end;
-  if Length(FNumL) < Length(Par.FNumL) then
+    Exit(AbsGreaterThan(Par));
+  end
+  else
   begin
-    Exit(False);
+    Exit(AbsLessThan(Par));
   end;
-  for i := Length(FNumL) - 1 downto 0 do
-  begin
-    if FNumL[i] and not Par.FNumL[i] then
-    begin
-      Exit(True);
-    end;
-    if not FNumL[i] and Par.FNumL[i] then
-    begin
-      Exit(False);
-    end;
-  end;
-  Exit(False);
 end;
 
 function TLongInteger.IsEven: Boolean;
@@ -1253,39 +1281,23 @@ begin
 end;
 
 function TLongInteger.LessThan(const Par: TLongInteger): Boolean;
-var
-  i: Integer;
 begin
-  Normalize;
-  Par.Normalize;
-  if FSymb and not Par.FSymb then
-  begin
-    Exit(False);
-  end;
-  if not FSymb and Par.FSymb then
+  if (not FSymb) and Par.FSymb then
   begin
     Exit(True);
   end;
-  if Length(FNumL) > Length(Par.FNumL) then
+  if FSymb and (not Par.FSymb) then
   begin
     Exit(False);
   end;
-  if Length(FNumL) < Length(Par.FNumL) then
+  if FSymb and Par.FSymb then
   begin
-    Exit(True);
-  end;
-  for i := Length(FNumL) - 1 downto 0 do
+    Exit(AbsLessThan(Par));
+  end
+  else
   begin
-    if FNumL[i] and not Par.FNumL[i] then
-    begin
-      Exit(False);
-    end;
-    if not FNumL[i] and Par.FNumL[i] then
-    begin
-      Exit(True);
-    end;
+    Exit(AbsGreaterThan(Par));
   end;
-  Exit(False);
 end;
 
 function TLongInteger.LogicalAnd(const Par: TLongInteger): TLongInteger;
@@ -1432,7 +1444,7 @@ function TLongInteger.Multiply(const Par: TLongInteger): TLongInteger;
 var
   Bit, NumLength, i: Integer;
   RevList: TArray<Integer>;
-  ComplexA, ComplexB: TArray<TComplex>;
+  ComplexA, ComplexB: TArray<TComplexMA>;
   S: Boolean;
   B1, B2: TBytes;
 begin
@@ -1520,12 +1532,19 @@ var
   LIB, LIP: TLongInteger;
   S: Boolean;
 begin
-  if Par.IsZero or not Par.FSymb then
+  if not Par.FSymb then
   begin
-    raise EPowerError.Create('Error Message: Power index must be greater than ZERO!');
+    raise EPowerError.Create('Error Message: Power index mustnot be Smaller than ZERO!');
   end;
   if IsZero then
   begin
+    Exit(Self);
+  end;
+  if Par.IsZero then
+  begin
+    FSymb := True;
+    SetLength(FNumL, 1);
+    FNumL[0] := True;
     Exit(Self);
   end;
   if not Par.FNumL[0] then
@@ -1646,10 +1665,13 @@ end;
 
 function TLongInteger.Subtract(const Par: TLongInteger): TLongInteger;
 begin
+  Normalize;
+  Par.Normalize;
   if IsZero then
   begin
-    CopyVal(Par);
-    FSymb := not FSymb;
+    FNumL := Copy(Par.FNumL, 0, Length(Par.FNumL));
+    FSymb := not Par.FSymb;
+    Exit(Self);
   end
   else if Par.IsZero then
   begin
@@ -1657,13 +1679,12 @@ begin
   end
   else if FSymb = Par.FSymb then
   begin
-    AbsSub(Par);
+    Exit(AbsSub(Par));
   end
   else
   begin
-    AbsAdd(Par);
+    Exit(AbsAdd(Par));
   end;
-  Exit(Self);
 end;
 
 function TLongInteger.ToBytes: TBytes;
@@ -1854,352 +1875,6 @@ begin
   Exit(Self);
 end;
 
-{ THexInt }
-
-class operator THexInt.Add(const Hex1, Hex2: THexInt): THexInt;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);
-    LI2.FromString16(Hex2.FHex);
-    Result.FHex := LI1.Add(LI2).ToString16;
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-class function THexInt.Create(const Str: string): THexInt;
-var
-  LI1: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  try
-    if LI1.FromString16(Str) then
-    begin
-      Result.FHex := LI1.ToString16;
-    end
-    else
-    begin
-      Result.FHex := '0';
-    end;
-  finally
-    FreeAndNil(LI1);
-  end;
-end;
-
-class operator THexInt.Divide(const Hex1, Hex2: THexInt): THexInt;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);
-    LI2.FromString16(Hex2.FHex);
-    Result.FHex := LI1.Divide(LI2).ToString16;
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-class operator THexInt.Equal(const Hex1, Hex2: THexInt): Boolean;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);      
-    LI2.FromString16(Hex2.FHex);
-    Exit(LI1.Equal(LI2));
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-function THexInt.GetBinValue: string;
-var
-  LI1: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  try
-    if LI1.FromString16(FHex) then
-    begin
-      Result := LI1.ToString2;
-    end;
-  finally
-    FreeAndNil(LI1);
-  end;
-end;
-
-function THexInt.GetDecValue: string;
-var
-  LI1: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  try
-    if LI1.FromString16(FHex) then
-    begin
-      Result := LI1.ToString10;
-    end;
-  finally
-    FreeAndNil(LI1);
-  end;
-end;
-
-function THexInt.GetHexValue: string;
-begin
-  Result := FHex;
-end;
-
-class operator THexInt.GreaterThan(const Hex1, Hex2: THexInt): Boolean;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);      
-    LI2.FromString16(Hex2.FHex);
-    Exit(LI1.GreaterThan(LI2));
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-class operator THexInt.GreaterThanOrEqual(const Hex1, Hex2: THexInt): Boolean;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);      
-    LI2.FromString16(Hex2.FHex);
-    Exit(not LI1.LessThan(LI2));
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-class operator THexInt.IntDivide(const Hex1, Hex2: THexInt): THexInt;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);
-    LI2.FromString16(Hex2.FHex);
-    Result.FHex := LI1.Divide(LI2).ToString16;
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-class operator THexInt.LessThan(const Hex1, Hex2: THexInt): Boolean;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);      
-    LI2.FromString16(Hex2.FHex);
-    Exit(LI1.LessThan(LI2));
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-class operator THexInt.LessThanOrEqual(const Hex1, Hex2: THexInt): Boolean;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);      
-    LI2.FromString16(Hex2.FHex);
-    Exit(not LI1.GreaterThan(LI2));
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-class operator THexInt.Modulus(const Hex1, Hex2: THexInt): THexInt;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);
-    LI2.FromString16(Hex2.FHex);
-    Result.FHex := LI1.Modulus(LI2).ToString16;
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-class operator THexInt.Multiply(const Hex1, Hex2: THexInt): THexInt;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);
-    LI2.FromString16(Hex2.FHex);
-    Result.FHex := LI1.Multiply(LI2).ToString16;
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-class operator THexInt.Negative(const Hex1: THexInt): THexInt;
-var
-  LI1: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);
-    LI1.Negative;
-    Result.FHex := LI1.ToString16;
-  finally
-    FreeAndNil(LI1);
-  end;
-end;
-
-class operator THexInt.NotEqual(const Hex1, Hex2: THexInt): Boolean;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);      
-    LI2.FromString16(Hex2.FHex);
-    Exit(not LI1.Equal(LI2));
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-class operator THexInt.Positive(const Hex1: THexInt): THexInt;
-begin
-  Result.FHex := Hex1.FHex;
-end;
-
-function THexInt.Power(const Hex1: THexInt): THexInt;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(FHex);
-    LI2.FromString16(Hex1.FHex);
-    Result.FHex := LI1.Power(LI2).ToString16;
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-function THexInt.PowAndMod(const Hex1, Hex2: THexInt): THexInt;
-var
-  LI1, LI2, LI3: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  LI3 := TLongInteger.Create;
-  try
-    LI1.FromString16(FHex);
-    LI2.FromString16(Hex1.FHex);
-    LI3.FromString16(Hex2.FHex);
-    Result.FHex := LI1.PowAndMod(LI2, LI3).ToString16;
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
-procedure THexInt.SetBinValue(const Value: string);
-var
-  LI1: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  try
-    if LI1.FromString2(Value) then
-    begin
-      FHex := LI1.ToString16;
-    end;
-  finally
-    FreeAndNil(LI1);
-  end;
-end;
-
-procedure THexInt.SetDecValue(const Value: string);
-var
-  LI1: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  try
-    if LI1.FromString10(Value) then
-    begin
-      FHex := LI1.ToString16;
-    end;
-  finally
-    FreeAndNil(LI1);
-  end;
-end;
-
-procedure THexInt.SetHexValue(const Value: string);
-var
-  LI1: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  try
-    if LI1.FromString16(Value) then
-    begin
-      FHex := LI1.ToString16;
-    end;
-  finally
-    FreeAndNil(LI1);
-  end;
-end;
-
-class operator THexInt.Subtract(const Hex1, Hex2: THexInt): THexInt;
-var
-  LI1, LI2: TLongInteger;
-begin
-  LI1 := TLongInteger.Create;
-  LI2 := TLongInteger.Create;
-  try
-    LI1.FromString16(Hex1.FHex);
-    LI2.FromString16(Hex2.FHex);
-    Result.FHex := LI1.Subtract(LI2).ToString16;
-  finally
-    FreeAndNil(LI1);
-    FreeAndNil(LI2);
-  end;
-end;
-
 { TLongReal }
 
 function TLongReal.AbsoluteVal: TLongReal;
@@ -2210,27 +1885,29 @@ end;
 
 function TLongReal.Add(const Par: TLongReal): TLongReal;
 var
-  N: TLongInteger;
+  N: Integer;
+  LI: TLongInteger;
   R: TLongReal;
 begin
   R := TLongReal.Create;
-  N := TLongInteger.Create;
+  LI := TLongInteger.Create;
   try
-    N.CopyVal(Par.FExp).Subtract(FExp).AbsoluteVal;
-    if R.FExp.GreaterThan(FExp) then
+    N := Abs(Par.FExp - FExp);
+    LI.FromInteger(N);
+    if Par.FExp > FExp then
     begin
       R.CopyVal(Par);
-      FCoe.Add(R.FCoe.Mut10PowN(N));
+      FCoe.Add(R.FCoe.Mut10PowN(LI));
     end
     else
     begin
-      FExp.CopyVal(Par.FExp);
-      FCoe.Mut10PowN(N).Add(Par.FCoe);
+      FExp := Par.FExp;
+      FCoe.Mut10PowN(LI).Add(Par.FCoe);
     end;
     Normalize;
   finally
     FreeAndNil(R);
-    FreeAndNil(N);
+    FreeAndNil(LI);
   end;
   Exit(Self);
 end;
@@ -2238,7 +1915,7 @@ end;
 function TLongReal.CopyVal(const Par: TLongReal): TLongReal;
 begin
   FCoe.CopyVal(Par.FCoe);
-  FExp.CopyVal(Par.FExp);
+  FExp := Par.FExp;
   Exit(Self);
 end;
 
@@ -2246,52 +1923,50 @@ constructor TLongReal.Create;
 begin
   inherited;
   FCoe := TLongInteger.Create;
-  FExp := TLongInteger.Create;
+  FExp := 0;
 end;
 
 constructor TLongReal.Create(LR: TLongReal);
 begin
   inherited Create;
-  FCoe := TLongInteger.Create;
-  FExp := TLongInteger.Create;
-  FCoe.CopyVal(LR.FCoe);
-  FExp.CopyVal(LR.FExp);
+  FCoe := TLongInteger.Create(LR.FCoe);
+  FExp := LR.FExp;
 end;
 
 constructor TLongReal.Create(Coe: TLongInteger);
 begin
   inherited Create;
-  FCoe := TLongInteger.Create;
-  FExp := TLongInteger.Create;
-  FCoe.CopyVal(Coe);
+  FCoe := TLongInteger.Create(Coe);
+  FExp := 0;
 end;
 
-constructor TLongReal.Create(Coe, Exp: TLongInteger);
+constructor TLongReal.Create(Coe: TLongInteger; Exp: Integer);
 begin
   inherited Create;
-  FCoe := TLongInteger.Create;
-  FExp := TLongInteger.Create;
-  FCoe.CopyVal(Coe);
-  FExp.CopyVal(Exp);
+  FCoe := TLongInteger.Create(Coe);
+  FExp := Exp;
 end;
 
 destructor TLongReal.Destroy;
 begin
   FreeAndNil(FCoe);
-  FreeAndNil(FExp);
   inherited;
 end;
 
-function TLongReal.Divide(const Par: TLongReal; Digit: Cardinal): TLongReal;
+function TLongReal.Divide(const Par: TLongReal; Digit: Integer): TLongReal;
 var
-  N: TLongInteger;
+  LI: TLongInteger;
 begin
-  N := TLongInteger.Create(Digit);
+  if Digit < 0 then
+  begin
+    Digit := 0;
+  end;
+  LI := TLongInteger.Create(Digit);
   try
-    FCoe.Mut10PowN(N).Divide(Par.FCoe);
-    FExp.Subtract(N).Subtract(Par.FExp);
+    FCoe.Mut10PowN(LI).Divide(Par.FCoe);
+    FExp := FExp - Digit - Par.FExp;
   finally
-    FreeAndNil(N);
+    FreeAndNil(LI);
   end;
   Normalize;
   Exit(Self);
@@ -2303,27 +1978,21 @@ var
   N: TLongInteger;
 begin
   R := TLongReal.Create(Self);
-  N := TLongInteger.Create(Digit);
+  N := TLongInteger.Create;
   try
     R.Subtract(Par).AbsoluteVal;
     if R.FCoe.IsZero then
     begin
       Exit(True);
     end;
-    R.FExp.Subtract(N).Normalize;
-    if R.FExp.FSymb and not R.FExp.IsZero then
+    R.FExp := R.FExp - Digit;
+    if R.FExp > 0 then
     begin
       Exit(False);
     end;
-    R.FCoe.Div10PowN(R.FExp.AbsoluteVal);
-    if R.FCoe.IsZero then
-    begin
-      Exit(True);
-    end
-    else
-    begin
-      Exit(False);
-    end;
+    N.FromInteger(- R.FExp);
+    R.FCoe.Div10PowN(N);
+    Exit(R.FCoe.IsZero);
   finally
     FreeAndNil(R);
     FreeAndNil(N);
@@ -2334,31 +2003,82 @@ end;
 function TLongReal.FromInteger(Coe, Exp: Integer): TLongReal;
 begin
   FCoe.FromInteger(Coe);
-  FExp.FromInteger(Exp);
+  FExp := Exp;
   Exit(Self);
 end;
 
 function TLongReal.FromInteger(Coe, Exp: Int64): TLongReal;
 begin
   FCoe.FromInteger(Coe);
-  FExp.FromInteger(Exp);
+  FExp := Exp;
   Exit(Self);
 end;
 
-function TLongReal.FromStringOri(Str: string): Boolean;
+function TLongReal.FromStringDot(Str: string): TLongReal;
+var
+  c: Char;
+  i, n, l: Integer;
+begin
+  n := 0;
+  for i := 0 to Str.Length - 1 do
+  begin
+    c := Str.Chars[i];
+    if (c <> '.') and (GetDecVal(c) = 255) then
+    begin
+      Exit(Zero);
+    end;
+  end;
+  if Str.StartsWith('0.') then
+  begin
+    Str := Str.Replace('.', '');
+    for i := 0 to Str.Length - 1 do if Str.Chars[i] <> '0' then
+    begin
+      Str := Str.Substring(i);
+      n := - i - Str.Length + 1;
+      Break;
+    end;
+  end
+  else
+  begin
+    n := Str.IndexOf('.');
+    if n = -1 then
+    begin
+      l := Str.Length;
+      n := 0;
+    end
+    else
+    begin
+      Str := Str.Replace('.', '');
+      l := Str.Length;
+      n := n - l;
+    end;
+    for i := 0 to l - 1 do if Str.Chars[l - i - 1] <> '0' then
+    begin
+      Str := Str.Substring(0, l - i);
+      n := n + i;
+      Break;
+    end;
+  end;
+  FCoe.FromString10(Str);
+  FExp := n;
+  Exit(Self);
+end;
+
+function TLongReal.FromStringOri(Str: string): TLongReal;
 var
   SS: TArray<string>;
 begin
   SS := Str.Split(['e', 'E']);
-  if FCoe.FromString10(SS[0]) and FExp.FromString10(SS[1]) then
+  FCoe.FromString10(SS[0]);
+  if not FCoe.IsZero then
   begin
-    Exit(True);
+    FExp := StrToIntDef(SS[1], 0);
   end
   else
   begin
-    Zero;
-    Exit(False);
+    FExp := 0;
   end;
+  Exit(Self);
 end;
 
 function TLongReal.GreaterThan(const Par: TLongReal; Digit: Integer): Boolean;
@@ -2367,7 +2087,7 @@ var
   N: TLongInteger;
 begin
   R := TLongReal.Create(Self);
-  N := TLongInteger.Create(Digit);
+  N := TLongInteger.Create;
   try
     R.Subtract(Par);
     if not R.FCoe.FSymb then
@@ -2378,20 +2098,14 @@ begin
     begin
       Exit(False);
     end;
-    R.FExp.Subtract(N).Normalize;
-    if R.FExp.FSymb and not R.FExp.IsZero then
+    R.FExp := R.FExp - Digit;
+    if R.FExp > 0 then
     begin
       Exit(True);
     end;
-    R.FCoe.Div10PowN(R.FExp.AbsoluteVal);
-    if R.FCoe.IsZero then
-    begin
-      Exit(False);
-    end
-    else
-    begin
-      Exit(True);
-    end;
+    N.FromInteger(- R.FExp);
+    R.FCoe.Div10PowN(N);
+    Exit(not R.FCoe.IsZero);
   finally
     FreeAndNil(R);
     FreeAndNil(N);
@@ -2405,7 +2119,7 @@ var
   N: TLongInteger;
 begin
   R := TLongReal.Create(Self);
-  N := TLongInteger.Create(Digit);
+  N := TLongInteger.Create;
   try
     R.Subtract(Par);
     if R.FCoe.FSymb then
@@ -2416,21 +2130,15 @@ begin
     begin
       Exit(False);
     end;
-    R.FExp.Subtract(N).Normalize;
+    R.FExp := R.FExp - Digit;
     R.FCoe.AbsoluteVal;
-    if R.FExp.FSymb and not R.FExp.IsZero then
+    if R.FExp > 0 then
     begin
       Exit(True);
     end;
-    R.FCoe.Div10PowN(R.FExp.AbsoluteVal);
-    if R.FCoe.IsZero then
-    begin
-      Exit(False);
-    end
-    else
-    begin
-      Exit(True);
-    end;
+    N.FromInteger(- R.FExp);
+    R.FCoe.Div10PowN(N);
+    Exit(not R.FCoe.IsZero);
   finally
     FreeAndNil(R);
     FreeAndNil(N);
@@ -2441,7 +2149,7 @@ end;
 function TLongReal.Multiply(const Par: TLongReal): TLongReal;
 begin
   FCoe.Multiply(Par.FCoe);
-  FExp.Add(Par.FExp);
+  FExp := FExp + Par.FExp;
   Normalize;
   Exit(Self);
 end;
@@ -2455,29 +2163,27 @@ end;
 function TLongReal.Normalize: TLongReal;
 var
   S: string;
-  i, n: Integer;
+  i, l: Integer;
   T: TLongInteger;
 begin
   FCoe.Normalize;
-  FExp.Normalize;
   if FCoe.IsZero then
   begin
-    FExp.Zero;
+    FExp := 0;
     Exit(Self);
   end;
   S := FCoe.ToString10;
-  n := 0;
-  for i := S.Length - 1 to 0 do if S.Chars[i] <> '0' then
+  l := S.Length;
+  for i := 0 to l - 1 do if S.Chars[l - i - 1] <> '0' then
   begin
-    n := S.Length - 1 - i;
+    T := TLongInteger.Create(i);
+    try
+      FCoe.FromString10(S.Substring(0, S.Length - i));
+      FExp := FExp + i;
+    finally
+      FreeAndNil(T);
+    end;
     Break;
-  end;
-  T := TLongInteger.Create(n);
-  try
-    FCoe.Div10PowN(T);
-    FExp.Add(T);
-  finally
-    FreeAndNil(T);
   end;
   Exit(Self);
 end;
@@ -2497,7 +2203,7 @@ begin
   LIOne := TLongInteger.Create(1);
   try
     LRA.FCoe.CopyVal(Trunc(LI));
-    LRA.FExp.FromInteger(0);
+    LRA.FExp := 0;
     LRA.Subtract(Self).Positive;
     LI.Positive;
     LRB.FromInteger(5, -1);
@@ -2516,34 +2222,113 @@ end;
 
 function TLongReal.Subtract(const Par: TLongReal): TLongReal;
 var
-  N: TLongInteger;
+  N: Integer;
+  LI: TLongInteger;
   R: TLongReal;
 begin
   R := TLongReal.Create;
-  N := TLongInteger.Create;
+  LI := TLongInteger.Create;
   try
-    N.CopyVal(Par.FExp).Subtract(FExp).AbsoluteVal;
-    if R.FExp.GreaterThan(FExp) then
+    N := Abs(Par.FExp - FExp);
+    LI.FromInteger(N);
+    if Par.FExp > FExp then
     begin
       R.CopyVal(Par);
-      FCoe.Subtract(R.FCoe.Mut10PowN(N));
+      FCoe.Subtract(R.FCoe.Mut10PowN(LI));
     end
     else
     begin
-      FExp.CopyVal(Par.FExp);
-      FCoe.Mut10PowN(N).Subtract(Par.FCoe);
+      FExp := Par.FExp;
+      FCoe.Mut10PowN(LI).Subtract(Par.FCoe);
     end;
     Normalize;
   finally
     FreeAndNil(R);
-    FreeAndNil(N);
+    FreeAndNil(LI);
   end;
   Exit(Self);
 end;
 
+{$ZEROBASEDSTRINGS ON}
+function TLongReal.ToStringDot: string;
+var
+  f: Boolean;
+  s, t: string;
+  i, n: Integer;
+begin
+  if FExp = 0 then
+  begin
+    Exit(FCoe.ToString10);
+  end
+  else if FExp > 0 then
+  begin
+    SetLength(s, FExp);
+    for i := 0 to FExp - 1 do
+    begin
+      s[i] := '0';
+    end;
+    Exit(Format('%s%s', [FCoe.ToString10, s]));
+  end
+  else
+  begin
+    n := - FExp;
+    s := FCoe.ToString10;
+    if s.StartsWith('-') then
+    begin
+      f := False;
+      s := s.Substring(1);
+    end
+    else
+    begin
+      f := True;
+    end;
+    if n = Length(s) then
+    begin
+      if f then
+      begin
+        Exit(Format('0.%s', [s]));
+      end
+      else
+      begin
+        Exit(Format('-0.%s', [s]));
+      end;
+    end
+    else if n > Length(s) then
+    begin
+      n := n - Length(s);
+      SetLength(t, n);
+      for i := 0 to n - 1 do
+      begin
+        t[i] := '0';
+      end;
+      if f then
+      begin
+        Exit(Format('0.%s%s', [t, s]));
+      end
+      else
+      begin
+        Exit(Format('-0.%s%s', [t, s]));
+      end;
+    end
+    else
+    begin
+      n := Length(s) - n;
+      s := s.Insert(n, '.');if f then
+      begin
+        Exit(Format('%s', [s]));
+      end
+      else
+      begin
+        Exit(Format('-%s', [s]));
+      end;
+    end;
+  end;
+end;
+{$ZEROBASEDSTRINGS OFF}
+
 function TLongReal.ToStringOri: string;
 begin
-  Exit(Format('%se%s', [FCoe.ToString10, FExp.ToString10]));
+  Exit(Format('%se%s', [FCoe.ToString10, IntToStr(FExp)]));
 end;
 
 function TLongReal.Trunc(LI: TLongInteger): TLongInteger;
@@ -2553,8 +2338,8 @@ begin
   LIA := TLongInteger.Create;
   try
     LI.CopyVal(FCoe);
-    LIA.CopyVal(FExp).Positive;
-    if not FExp.FSymb then
+    LIA.FromInteger(FExp).Positive;
+    if FExp < 0 then
     begin
       LI.Div10PowN(LIA);
     end
@@ -2571,13 +2356,13 @@ end;
 function TLongReal.Zero: TLongReal;
 begin
   FCoe.Zero;
-  FExp.Zero;
+  FExp := 0;
   Exit(Self);
 end;
 
-{ TComplex }
+{ TComplexMA }
 
-class operator TComplex.Add(const C1, C2: TComplex): TComplex;
+class operator TComplexMA.Add(const C1, C2: TComplexMA): TComplexMA;
 var
   A, B: Double;
 begin
@@ -2587,63 +2372,63 @@ begin
   Result.FA := ArcTan2(B, A);
 end;
 
-function TComplex.Argument: Double;
+function TComplexMA.Argument: Double;
 begin
-  Exit(FA);
+  Result := FA;
 end;
 
-function TComplex.Conjugate: TComplex;
+function TComplexMA.Conjugate: TComplexMA;
 begin
   Result.FM := FM;
   Result.FA := -FA;
 end;
 
-class function TComplex.Create(const Modulus, Argument: Double): TComplex;
+class function TComplexMA.Create(const Modulus, Argument: Double): TComplexMA;
 begin
   Result.FM := Modulus;
   Result.FA := Argument;
 end;
 
-class operator TComplex.Divide(const C1: TComplex; const C2: Double): TComplex;
+class operator TComplexMA.Divide(const C1: TComplexMA; const C2: Double): TComplexMA;
 begin
   Result.FM := C1.FM / C2;
   Result.FA := C1.FA;
 end;
 
-class operator TComplex.Divide(const C1, C2: TComplex): TComplex;
+class operator TComplexMA.Divide(const C1, C2: TComplexMA): TComplexMA;
 begin
   Result.FM := C1.FM / C2.FM;
   Result.FA := C1.FA - C2.FA;
 end;
 
-function TComplex.Imaginary: Double;
+function TComplexMA.Imaginary: Double;
 begin
-  Exit(FM * Sin(FA));
+  Result := FM * Sin(FA);
 end;
 
-function TComplex.Modulus: Double;
+function TComplexMA.Modulus: Double;
 begin
-  Exit(FM);
+  Result := FM;
 end;
 
-class operator TComplex.Multiply(const C1: TComplex; const C2: Double): TComplex;
+class operator TComplexMA.Multiply(const C1: TComplexMA; const C2: Double): TComplexMA;
 begin
   Result.FM := C1.FM * C2;
   Result.FA := C1.FA;
 end;
 
-class operator TComplex.Multiply(const C1, C2: TComplex): TComplex;
+class operator TComplexMA.Multiply(const C1, C2: TComplexMA): TComplexMA;
 begin
   Result.FM := C1.FM * C2.FM;
   Result.FA := C1.FA + C2.FA;
 end;
 
-function TComplex.Real: Double;
+function TComplexMA.Real: Double;
 begin
-  Exit(FM * Cos(FA));
+  Result := FM * Cos(FA);
 end;
 
-class operator TComplex.Subtract(const C1, C2: TComplex): TComplex;
+class operator TComplexMA.Subtract(const C1, C2: TComplexMA): TComplexMA;
 var
   A, B: Double;
 begin
@@ -2651,6 +2436,79 @@ begin
   B := C1.FM * Sin(C1.FA) - C2.FM * Sin(C2.FA);
   Result.FM := Sqrt(A * A + B * B);
   Result.FA := ArcTan2(B, A);
+end;
+
+{ TComplexRI }
+
+class operator TComplexRI.Add(const C1, C2: TComplexRI): TComplexRI;
+begin
+  Result.FR := C1.FR + C2.FR;
+  Result.FI := C1.FI + C2.FI;
+end;
+
+function TComplexRI.Argument: Double;
+begin
+  Exit(ArcTan2(FI, FR));
+end;
+
+function TComplexRI.Conjugate: TComplexRI;
+begin
+  Result.FR := FR;
+  Result.FI := FI;
+end;
+
+class function TComplexRI.Create(const Real, Imaginary: Double): TComplexRI;
+begin
+  Result.FR := Real;
+  Result.FI := Imaginary;
+end;
+
+class operator TComplexRI.Divide(const C1, C2: TComplexRI): TComplexRI;
+var
+  M: Double;
+begin
+  M := C2.FR * C2.FR + C2.FI * C2.FI;
+  Result.FR := (C1.FR * C2.FR + C1.FI * C2.FI) / M;
+  Result.FI := (C1.FI * C2.FR - C1.FR * C2.FI) / M;
+end;
+
+class operator TComplexRI.Divide(const C1: TComplexRI; const C2: Double): TComplexRI;
+begin
+  Result.FR := C1.FR / C2;
+  Result.FI := C1.FI / C2;
+end;
+
+function TComplexRI.Imaginary: Double;
+begin
+  Result := FI;
+end;
+
+class operator TComplexRI.Multiply(const C1, C2: TComplexRI): TComplexRI;
+begin
+  Result.FR := C1.FR * C2.FR - C1.FI * C2.FI;
+  Result.FI := C1.FR * C2.FI + C1.FI * C2.FR;
+end;
+
+function TComplexRI.Modulus: Double;
+begin
+  Result := Sqrt(FR * FR + FI * FI);
+end;
+
+class operator TComplexRI.Multiply(const C1: TComplexRI; const C2: Double): TComplexRI;
+begin
+  Result.FR := C1.FR * C2;
+  Result.FI := C1.FI * C2;
+end;
+
+function TComplexRI.Real: Double;
+begin
+  Result := FR;
+end;
+
+class operator TComplexRI.Subtract(const C1, C2: TComplexRI): TComplexRI;
+begin
+  Result.FR := C1.FR - C2.FR;
+  Result.FI := C1.FI - C2.FI;
 end;
 
 end.
