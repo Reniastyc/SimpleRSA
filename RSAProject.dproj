@@ -292,7 +292,7 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_MinorVer>21</VerInfo_MinorVer>
         <VerInfo_Locale>2052</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.21.0.0;InternalName=;LegalCopyright=Reniastyc de El Magnifico;LegalTrademarks=;OriginalFilename=;ProgramID=RdeEM.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=天道玄虛;FileDescription=$(MSBuildProjectName);FileVersion=1.21.0.0;InternalName=RSAProject;LegalCopyright=Reniastyc de El Magnifico;LegalTrademarks=Reniastyc de El Magnifico;OriginalFilename=RSAProject;ProgramID=RdeEM.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
         <Icon_MainIcon>Icon.ico</Icon_MainIcon>
         <UWP_DelphiLogo44>Logo.png</UWP_DelphiLogo44>
