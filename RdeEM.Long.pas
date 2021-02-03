@@ -4,7 +4,7 @@
 {                                                       }
 {                    RdeEM Long                         }
 {                     大数单元                          }
-{                     ver 1.21                          }
+{                     ver 1.22                          }
 {                                                       }
 {    Copyright(c) 2018-2019 Reniasty de El Magnifico    }
 {                   天道玄虚 出品                       }
@@ -105,7 +105,6 @@ type
     function ToString10: string;
     function ToString16: string;
     function ToBytes: TBytes;
-    function ToBytes16: TBytes;
     function FromString2(Str: string): TLongInteger;
     function FromString10(Str: string): TLongInteger;
     function FromString16(Str: string): TLongInteger;
@@ -115,7 +114,6 @@ type
     function FromInteger(N: Integer): TLongInteger; overload;
     function FromInteger(N: Int64): TLongInteger; overload;
     function FromBytes(B: TBytes): TLongInteger;
-    function FromBytes16(B: TBytes): TLongInteger;
     function FromRandom(Digits: Integer): TLongInteger;
     function FromRandomOdd(Digits: Integer): TLongInteger;
     function FromRandomEven(Digits: Integer): TLongInteger;
@@ -928,29 +926,6 @@ begin
   Exit(Self);
 end;
 
-function TLongInteger.FromBytes16(B: TBytes): TLongInteger;
-var
-  n: Byte;
-  i, l: Integer;
-begin
-  FSymb := True;
-  l := Length(B);
-  SetLength(FNumL, 4 * l);
-  for i := 0 to l - 1 do
-  begin
-    n := B[i];
-    FNumL[4 * i] := (n and 1 = 1);
-    n := n shr 1;
-    FNumL[4 * i + 1] := (n and 1 = 1);
-    n := n shr 1;
-    FNumL[4 * i + 2] := (n and 1 = 1);
-    n := n shr 1;
-    FNumL[4 * i + 3] := (n and 1 = 1);
-  end;
-  Normalize;
-  Exit(Self);
-end;
-
 function TLongInteger.FromInteger(N: Byte): TLongInteger;
 var
   i: Integer;
@@ -1729,38 +1704,6 @@ begin
     if (8 * i + 7 < Length(FNumL)) and FNumL[8 * i + 7] then
     begin
       n := n + 128;
-    end;
-    bs[i] := n;
-  end;
-  Exit(bs);
-end;
-
-function TLongInteger.ToBytes16: TBytes;
-var
-  bs: TBytes;
-  i, l: Integer;
-  n: Byte;
-begin
-  l := (Length(FNumL) - 1) div 4 + 1;
-  SetLength(bs, l);
-  for i := 0 to l - 1 do
-  begin
-    n := 0;
-    if (4 * i < Length(FNumL)) and FNumL[4 * i] then
-    begin
-      n := n + 1;
-    end;
-    if (4 * i + 1 < Length(FNumL)) and FNumL[4 * i + 1] then
-    begin
-      n := n + 2;
-    end;
-    if (4 * i + 2 < Length(FNumL)) and FNumL[4 * i + 2] then
-    begin
-      n := n + 4;
-    end;
-    if (4 * i + 3 < Length(FNumL)) and FNumL[4 * i + 3] then
-    begin
-      n := n + 8;
     end;
     bs[i] := n;
   end;

@@ -4,7 +4,7 @@
 {                                                       }
 {                    RdeEM Prime                        }
 {                     素数单元                          }
-{                     ver 1.21                          }
+{                     ver 1.22                          }
 {                                                       }
 {    Copyright(c) 2018-2019 Reniasty de El Magnifico    }
 {                   天道玄虚 出品                       }

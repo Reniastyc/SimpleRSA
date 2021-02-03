@@ -248,6 +248,8 @@ begin
 end;
 
 procedure TRSATest.Button5Click(Sender: TObject);
+var
+  BS: TBytes;
 begin
   if Memo1.Text = '' then
   begin
@@ -266,7 +268,16 @@ begin
     case ComboBox2.ItemIndex of
       0: Memo1.Text := RSATE.ToString16;
       1: Memo1.Text := RSATE.ToString10;
-      2: Memo1.Text := WideStringOf(RSATE.ToBytes);
+      2:
+      begin
+        BS := RSATE.ToBytes;
+        if Length(BS) and 1 <> 0 then
+        begin
+          SetLength(BS, Length(BS) + 1);
+          BS[Length(BS) - 1] := 0;
+        end;
+        Memo1.Text := WideStringOf(BS);
+      end;
     else
       Exit;
     end;
@@ -274,6 +285,8 @@ begin
 end;
 
 procedure TRSATest.Button6Click(Sender: TObject);
+var
+  BS: TBytes;
 begin
   if Memo1.Text = '' then
   begin
@@ -292,7 +305,16 @@ begin
     case ComboBox4.ItemIndex of
       0: Memo1.Text := RSATE.ToString16;
       1: Memo1.Text := RSATE.ToString10;
-      2: Memo1.Text := WideStringOf(RSATE.ToBytes);
+      2:
+      begin
+        BS := RSATE.ToBytes;
+        if Length(BS) and 1 <> 0 then
+        begin
+          SetLength(BS, Length(BS) + 1);
+          BS[Length(BS) - 1] := 0;
+        end;
+        Memo1.Text := WideStringOf(BS);
+      end;
     else
       Exit;
     end;
