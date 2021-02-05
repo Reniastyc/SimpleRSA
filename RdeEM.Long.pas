@@ -1,15 +1,15 @@
-{*******************************************************}
+ï»¿{*******************************************************}
 {                                                       }
 {             Delphi FireMonkey Platform                }
 {                                                       }
 {                    RdeEM Long                         }
-{                     ´óÊıµ¥Ôª                          }
-{                     ver 1.22                          }
+{                     å¤§æ•°å•å…ƒ                          }
+{                     ver 1.23                          }
 {                                                       }
 {    Copyright(c) 2018-2019 Reniasty de El Magnifico    }
-{                   ÌìµÀĞşĞé ³öÆ·                       }
+{                   å¤©é“ç„è™š å‡ºå“                       }
 {                 All rights reserved                   }
-{                   ±£ÁôËùÓĞÈ¨Àû                        }
+{                   ä¿ç•™æ‰€æœ‰æƒåˆ©                        }
 {                                                       }
 {*******************************************************}
 
@@ -29,8 +29,8 @@ type
 
   TComplexMA = record
   private
-    FM: Double; // Ä£”µ
-    FA: Double; // İ—½Ç
+    FM: Double; // æ¨¡æ•¸
+    FA: Double; // è¼»è§’
   public
     class function Create(const Modulus, Argument: Double): TComplexMA; static; inline;
     class operator Multiply(const C1, C2: TComplexMA): TComplexMA; overload;
@@ -48,8 +48,8 @@ type
 
   TComplexRI = record
   private
-    FR: Double; // Œ²¿
-    FI: Double; // Ì“²¿
+    FR: Double; // å¯¦éƒ¨
+    FI: Double; // è™›éƒ¨
   public
     class function Create(const Real, Imaginary: Double): TComplexRI; static; inline;
     class operator Multiply(const C1, C2: TComplexRI): TComplexRI; overload;
@@ -67,13 +67,13 @@ type
 
   TLongInteger = class
   private
-    FSymb: Boolean; // ·ûºÅÎ»£¬True´ú±íÕıÊı¡£
+    FSymb: Boolean; // ç¬¦å·ä½ï¼ŒTrueä»£è¡¨æ­£æ•°ã€‚
     FNumL: TArray<Boolean>;
     function AbsAdd(const Par: TLongInteger): TLongInteger;
     function AbsSub(const Par: TLongInteger; const ChangeSymbol: Boolean = True): TLongInteger;
-      // AbsSubÓ‹ËãÔ­”µÖ®½^Œ¦ÖµÅc…¢”µÖ®½^Œ¦ÖµµÄ²îÖµ
-      // ®”ChangeSymbol ‘True•r£¬•şÔÚÔ­”µÖ®½^Œ¦ÖµĞ¡ì¶…¢”µÖ®½^Œ¦ÖµµÄÇé›rÏÂ¸Ä×ƒÔ­”µµÄ·ûÌ–
-      // ®”ChangeSymbol ‘False•r£¬„t²»•ş¸Ä×ƒ·ûÌ–£¬Ä¬ÕJÇé›rÏÂ•ş¸Ä×ƒÔ­”µ·ûÌ–
+      // AbsSubè¨ˆç®—åŸæ•¸ä¹‹çµ•å°å€¼èˆ‡åƒæ•¸ä¹‹çµ•å°å€¼çš„å·®å€¼
+      // ç•¶ChangeSymbolçˆ²Trueæ™‚ï¼Œæœƒåœ¨åŸæ•¸ä¹‹çµ•å°å€¼å°æ–¼åƒæ•¸ä¹‹çµ•å°å€¼çš„æƒ…æ³ä¸‹æ”¹è®ŠåŸæ•¸çš„ç¬¦è™Ÿ
+      // ç•¶ChangeSymbolçˆ²Falseæ™‚ï¼Œå‰‡ä¸æœƒæ”¹è®Šç¬¦è™Ÿï¼Œé»˜èªæƒ…æ³ä¸‹æœƒæ”¹è®ŠåŸæ•¸ç¬¦è™Ÿ
     function Mut10PowN(N: TLongInteger): TLongInteger;
     function Div10PowN(N: TLongInteger): TLongInteger;
     function Normalize: TLongInteger;
@@ -89,18 +89,18 @@ type
     constructor Create(N: Word); overload;
     constructor Create(N: Byte); overload;
     destructor Destroy; override;
-    // Ñ}Ñu
+    // è¤‡è£½
     function CopyVal(const Par: TLongInteger): TLongInteger;
-    // ÅĞ”à
+    // åˆ¤æ–·
     function Equal(const Par: TLongInteger): Boolean;
     function LessThan(const Par: TLongInteger): Boolean;
     function GreaterThan(const Par: TLongInteger): Boolean;
     function IsZero: Boolean;
     function IsEven: Boolean;
     function IsOdd: Boolean;
-    // Î»”µ
+    // ä½æ•¸
     function Digit: Integer;
-    // ŞD“Q
+    // è½‰æ›
     function ToString2: string;
     function ToString10: string;
     function ToString16: string;
@@ -117,12 +117,12 @@ type
     function FromRandom(Digits: Integer): TLongInteger;
     function FromRandomOdd(Digits: Integer): TLongInteger;
     function FromRandomEven(Digits: Integer): TLongInteger;
-    // šwÁã¡¢½^Œ¦Öµ¡¢ÕıØ“
+    // æ­¸é›¶ã€çµ•å°å€¼ã€æ­£è² 
     function Zero: TLongInteger;
     function AbsoluteVal: TLongInteger;
     function Positive: TLongInteger;
     function Negative: TLongInteger;
-    // ß\Ëã
+    // é‹ç®—
     function Add(const Par: TLongInteger): TLongInteger;
     function Subtract(const Par: TLongInteger): TLongInteger;
     function Multiply(const Par: TLongInteger): TLongInteger;
@@ -137,14 +137,14 @@ type
     function LogicalNot: TLongInteger;
     function ShiftR(Shift: Integer): TLongInteger;
     function ShiftL(Shift: Integer): TLongInteger;
-      // Öµ
+      // å€¼
     function GetValue(Index: Integer): Boolean;
   end;
 
-  TLongReal = class // ÓÃ¿ÆŒWÓ›”µ·¨Ó›ä›Œ”µ£¬Val = FCoe * Power(10, FExp)
+  TLongReal = class // ç”¨ç§‘å­¸è¨˜æ•¸æ³•è¨˜éŒ„å¯¦æ•¸ï¼ŒVal = FCoe * Power(10, FExp)
   private
-    FCoe: TLongInteger; // ‚S”µ
-    FExp: Integer; // Ö¸”µ
+    FCoe: TLongInteger; // ä¿‚æ•¸
+    FExp: Integer; // æŒ‡æ•¸
     function Normalize: TLongReal;
   public
     constructor Create; overload;
@@ -152,28 +152,28 @@ type
     constructor Create(Coe: TLongInteger); overload;
     constructor Create(Coe: TLongInteger; Exp: Integer); overload;
     destructor Destroy; override;
-    // Ñ}Ñu
+    // è¤‡è£½
     function CopyVal(const Par: TLongReal): TLongReal;
-    // ÅĞ”à
+    // åˆ¤æ–·
     function Equal(const Par: TLongReal; Digit: Integer = -5): Boolean;
     function LessThan(const Par: TLongReal; Digit: Integer = -5): Boolean;
     function GreaterThan(const Par: TLongReal; Digit: Integer = -5): Boolean;
-      // Digit´ú±íÅĞ¶¨¾«¶È£¬Èç¹ûƒÉ”µÖ®²îÔÚÔ“Á¿¼‰¹ ‡úƒÈ£¬„tÅĞ¶¨ ‘ÏàµÈ¡£
-      // ÈçDigitÈ¡-5•r£¬„tÏà²î½^Œ¦ÖµÔÚPower(10, -5)ƒÈ¶¼Ò• ‘ÏàµÈ¡£
-    // šwÁã¡¢½^Œ¦Öµ¡¢ÕıØ“
+      // Digitä»£è¡¨åˆ¤å®šç²¾åº¦ï¼Œå¦‚æœå…©æ•¸ä¹‹å·®åœ¨è©²é‡ç´šç¯„åœå…§ï¼Œå‰‡åˆ¤å®šçˆ²ç›¸ç­‰ã€‚
+      // å¦‚Digitå–-5æ™‚ï¼Œå‰‡ç›¸å·®çµ•å°å€¼åœ¨Power(10, -5)å…§éƒ½è¦–çˆ²ç›¸ç­‰ã€‚
+    // æ­¸é›¶ã€çµ•å°å€¼ã€æ­£è² 
     function Zero: TLongReal;
     function AbsoluteVal: TLongReal;
     function Positive: TLongReal;
     function Negative: TLongReal;
     function Trunc(LI: TLongInteger): TLongInteger;
     function Round(LI: TLongInteger): TLongInteger;
-    // ËÄ„tß\Ëã
+    // å››å‰‡é‹ç®—
     function Add(const Par: TLongReal): TLongReal;
     function Subtract(const Par: TLongReal): TLongReal;
     function Multiply(const Par: TLongReal): TLongReal;
     function Divide(const Par: TLongReal; Digit: Integer = 5): TLongReal;
-      // Digit´ú±íî~ÍâµÄÎ»”µ¡£È¡0„tÏà®”ì¶Œ¦ƒÉ”µµÄ‚S”µ²¿·İ×öÕû”µ³ı·¨£¬È¡x„tÏà®”ì¶±£ÁôxÎ»Ğ¡”µ
-    // ŞD“Q£¨ƒHÖ§³ÖŸoĞ¡”µücÖ®¿ÆŒWÓ›”µ·¨µÄŞD“Q£©
+      // Digitä»£è¡¨é¡å¤–çš„ä½æ•¸ã€‚å–0å‰‡ç›¸ç•¶æ–¼å°å…©æ•¸çš„ä¿‚æ•¸éƒ¨ä»½åšæ•´æ•¸é™¤æ³•ï¼Œå–xå‰‡ç›¸ç•¶æ–¼ä¿ç•™xä½å°æ•¸
+    // è½‰æ›ï¼ˆåƒ…æ”¯æŒç„¡å°æ•¸é»ä¹‹ç§‘å­¸è¨˜æ•¸æ³•çš„è½‰æ›ï¼‰
     function ToStringOri: string;
     function ToStringDot :string;
     function FromStringOri(Str: string): TLongReal;
@@ -182,19 +182,19 @@ type
     function FromInteger(Coe, Exp: Int64): TLongReal; overload;
   end;
 
-  // ×Ö·ûÅc”µÖµ»¥“Q
+  // å­—ç¬¦èˆ‡æ•¸å€¼äº’æ›
   function GetHexChr(N: Byte): Char;
   function GetHexVal(C: Char): Byte;
   function GetDecChr(N: Byte): Char;
   function GetDecVal(C: Char): Byte;
 
-  // Ñ}”µ×ƒ“QÏàêP
+  // è¤‡æ•¸è®Šæ›ç›¸é—œ
   function ComplexMA(const Modulus, Argument: Double): TComplexMA; inline; overload;
   function ComplexMA(const ComplexRI: TComplexRI): TComplexMA; inline; overload;
   function ComplexRI(const Real, Imaginary: Double): TComplexRI; inline; overload;
   function ComplexRI(const ComplexMA: TComplexMA): TComplexRI; inline; overload;
 
-  // ¸µÀûÈ~×ƒ“QÏàêP
+  // å‚…åˆ©è‘‰è®Šæ›ç›¸é—œ
   function GetReverseList(var Reverse: TArray<Integer>; Bit: Integer): Boolean;
   function FFT(var Complex: TArray<TComplexMA>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
   function IFFT(var Complex: TArray<TComplexMA>; var Reverse: TArray<Integer>; Count: Integer): Boolean;
@@ -1584,7 +1584,7 @@ begin
   SetLength(FNumL, 1);
   FNumL[0] := True;
   try
-    while LIP.FSymb and not LIP.IsZero do
+    while LIP.FSymb and (not LIP.IsZero) do
     begin
       if LIP.FNumL[0] then
       begin

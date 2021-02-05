@@ -1,4 +1,4 @@
-unit RSAForm;
+Ôªøunit RSAForm;
 
 interface
 
@@ -7,7 +7,7 @@ uses
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.StdCtrls, FMX.Controls.Presentation, FMX.Edit,
   FMX.Memo, FMX.EditBox, FMX.NumberBox, FMX.ScrollBox, FMX.Layouts, FMX.Memo.Types, FMX.ListBox,
   Winapi.Windows,
-  RdeEM.Long, RdeEM.Prime;
+  RdeEM.Long, RdeEM.Prime, FMX.TabControl;
 
 type
   TRSATest = class(TForm)
@@ -62,9 +62,24 @@ type
     ComboBox3: TComboBox;
     Label13: TLabel;
     ComboBox4: TComboBox;
+    TabControl1: TTabControl;
+    TabItem1: TTabItem;
+    TabItem2: TTabItem;
+    Panel9: TPanel;
+    Edit1: TEdit;
+    Label14: TLabel;
+    EllipsesEditButton1: TEllipsesEditButton;
+    Panel10: TPanel;
+    Edit2: TEdit;
+    EllipsesEditButton2: TEllipsesEditButton;
+    Label15: TLabel;
+    ErrorTooLong: TLabel;
+    ErrorFileError: TLabel;
+    ErrorTextError: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure ThreadOnTerminate(Sender: TObject);
+    procedure EncodingThreadOnTerminate(Sender: TObject);
     procedure ComboBoxLangChange(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -75,11 +90,15 @@ type
     procedure Button7Click(Sender: TObject);
     procedure Button8Click(Sender: TObject);
     procedure Button9Click(Sender: TObject);
+    procedure EllipsesEditButton1Click(Sender: TObject);
+    procedure EllipsesEditButton2Click(Sender: TObject);
   private
     { Private declarations }
   public
     { Public declarations }
   end;
+
+  EEncodingError = class(Exception);
 
 function GetBuildInfo: string;
 
@@ -89,6 +108,7 @@ var
   PrimeL: TArray<TLongInteger>;
   GetPrime1, GetPrime2, GetRSAE0: Boolean;
   MyThread1, MyThread2, MyThread3: TThread;
+  ErrorMessage: string;
 
 implementation
 
@@ -146,8 +166,8 @@ begin
       RSAE.FromString16(Texts[2]);
       EditE.Text := RSAE.ToString16;
       EditN.Text := RSAN.ToString16;
-      Label8.Text := Format('°∏%d°π', [RSAE.Digit]);
-      Label4.Text := Format('°∏%d°π', [RSAN.Digit]);
+      Label8.Text := Format('„Äå%d„Äç', [RSAE.Digit]);
+      Label4.Text := Format('„Äå%d„Äç', [RSAN.Digit]);
     end;
   finally
     FreeAndNil(Texts);
@@ -200,8 +220,8 @@ begin
       RSAD.FromString16(Texts[2]);
       EditD.Text := RSAD.ToString16;
       EditN.Text := RSAN.ToString16;
-      Label9.Text := Format('°∏%d°π', [RSAD.Digit]);
-      Label4.Text := Format('°∏%d°π', [RSAN.Digit]);
+      Label9.Text := Format('„Äå%d„Äç', [RSAD.Digit]);
+      Label4.Text := Format('„Äå%d„Äç', [RSAN.Digit]);
     end;
   finally
     FreeAndNil(Texts);
@@ -248,75 +268,255 @@ begin
 end;
 
 procedure TRSATest.Button5Click(Sender: TObject);
-var
-  BS: TBytes;
 begin
-  if Memo1.Text = '' then
-  begin
-    Exit;
-  end;
-  case ComboBox1.ItemIndex of
-    0: RSATE.FromString16(Memo1.Text.Replace(sLineBreak, ''));
-    1: RSATE.FromString10(Memo1.Text.Replace(sLineBreak, ''));
-    2: RSATE.FromBytes(WideBytesof(Memo1.Text));
-  else
-    Exit;
-  end;
-  if RSATE.LessThan(RSAN) and not RSAE.IsZero then
-  begin
-    RSATE.PowAndMod(RSAE, RSAN);
-    case ComboBox2.ItemIndex of
-      0: Memo1.Text := RSATE.ToString16;
-      1: Memo1.Text := RSATE.ToString10;
-      2:
-      begin
-        BS := RSATE.ToBytes;
-        if Length(BS) and 1 <> 0 then
+  Back.Enabled := False;
+  AniIndicator.Enabled := True;
+  AniIndicator.Visible := True;
+  ErrorMessage := '';
+  case TabControl1.TabIndex of
+    0:
+    begin
+      MyThread1 := TThread.CreateAnonymousThread(
+        procedure
+        var
+          BS: TBytes;
         begin
-          SetLength(BS, Length(BS) + 1);
-          BS[Length(BS) - 1] := 0;
-        end;
-        Memo1.Text := WideStringOf(BS);
-      end;
-    else
-      Exit;
+          if Memo1.Text = '' then
+          begin
+            Exit;
+          end;
+          case ComboBox1.ItemIndex of
+            0: RSATE.FromString16(Memo1.Text.Replace(sLineBreak, ''));
+            1: RSATE.FromString10(Memo1.Text.Replace(sLineBreak, ''));
+            2: RSATE.FromBytes(WideBytesof(Memo1.Text));
+          else
+            Exit;
+          end;
+          if RSATE.LessThan(RSAN) and not RSAE.IsZero then
+          begin
+            RSATE.PowAndMod(RSAE, RSAN);
+            case ComboBox2.ItemIndex of
+              0: Memo1.Text := RSATE.ToString16;
+              1: Memo1.Text := RSATE.ToString10;
+              2:
+              begin
+                BS := RSATE.ToBytes;
+                if Length(BS) and 1 <> 0 then
+                begin
+                  SetLength(BS, Length(BS) + 1);
+                  BS[Length(BS) - 1] := 0;
+                end;
+                Memo1.Text := WideStringOf(BS);
+              end;
+            else
+              ErrorMessage := ErrorTextError.Text;
+              Exit;
+            end;
+          end
+          else
+          begin
+            ErrorMessage := ErrorTooLong.Text;
+            Exit;
+          end;
+        end
+      );
+      MyThread1.OnTerminate := EncodingThreadOnTerminate;
+      MyThread1.Start;
+    end;
+    1: // Âä†ÂØÜÊñá‰ª∂
+    begin
+      MyThread1 := TThread.CreateAnonymousThread(
+        procedure
+        var
+          FS, FD: string;
+          BS, BD: TBytes;
+          LS, LD, i, l: Integer;
+          MS, MD: TMemoryStream;
+        begin
+          FS := Edit1.Text;
+          FD := Edit2.Text;
+          if (not FileExists(FS)) or (FD = '') then
+          begin
+            Exit;
+          end;
+          LS := (RSAN.Digit - 1) div 8;
+          LD := (RSAN.Digit + 7) div 8;
+          MS := TMemoryStream.Create;
+          MD := TMemoryStream.Create;
+          try
+            MS.LoadFromFile(FS);
+            MS.Position := 0;
+            while MS.Position + LS < MS.Size do
+            begin
+              SetLength(BS, LS);
+              MS.ReadBuffer(BS,LS);
+              RSATE.FromBytes(BS);
+              RSATE.PowAndMod(RSAE, RSAN);
+              BD := RSATE.ToBytes;
+              l := Length(BD);
+              if l > LD then
+              begin
+                ErrorMessage := ErrorFileError.Text;
+                Exit;
+              end;
+              SetLength(BD, LD);
+              for i := l to LD - 1 do
+              begin
+                BD[i] := 0;
+              end;
+              MD.WriteBuffer(BD, LD);
+            end;
+            if MS.Position < MS.Size then
+            begin
+              SetLength(BS, MS.Size - MS.Position);
+              MS.ReadBuffer(BS, Length(BS));
+              RSATE.FromBytes(BS);
+              RSATE.PowAndMod(RSAE, RSAN);
+              BD := RSATE.ToBytes;
+              l := Length(BD);
+              if l > LD then
+              begin
+                ErrorMessage := ErrorFileError.Text;
+                Exit;
+              end;
+              MD.WriteBuffer(BD, l);
+            end;
+            MD.SaveToFile(FD);
+          finally
+            FreeAndNil(MS);
+            FreeAndNil(MD);
+          end;
+        end
+      );
+      MyThread1.OnTerminate := EncodingThreadOnTerminate;
+      MyThread1.Start;
     end;
   end;
 end;
 
 procedure TRSATest.Button6Click(Sender: TObject);
-var
-  BS: TBytes;
 begin
-  if Memo1.Text = '' then
-  begin
-    Exit;
-  end;
-  case ComboBox3.ItemIndex of
-    0: RSATE.FromString16(Memo1.Text.Replace(sLineBreak, ''));
-    1: RSATE.FromString10(Memo1.Text.Replace(sLineBreak, ''));
-    2: RSATE.FromBytes(WideBytesof(Memo1.Text));
-  else
-    Exit;
-  end;
-  if RSATE.LessThan(RSAN) and not RSAD.IsZero then
-  begin
-    RSATE.PowAndMod(RSAD, RSAN);
-    case ComboBox4.ItemIndex of
-      0: Memo1.Text := RSATE.ToString16;
-      1: Memo1.Text := RSATE.ToString10;
-      2:
-      begin
-        BS := RSATE.ToBytes;
-        if Length(BS) and 1 <> 0 then
+  Back.Enabled := False;
+  AniIndicator.Enabled := True;
+  AniIndicator.Visible := True;
+  ErrorMessage := '';
+  case TabControl1.TabIndex of
+    0:
+    begin
+      MyThread1 := TThread.CreateAnonymousThread(
+        procedure
+        var
+          BS: TBytes;
         begin
-          SetLength(BS, Length(BS) + 1);
-          BS[Length(BS) - 1] := 0;
-        end;
-        Memo1.Text := WideStringOf(BS);
-      end;
-    else
-      Exit;
+          if Memo1.Text = '' then
+          begin
+            Exit;
+          end;
+          case ComboBox3.ItemIndex of
+            0: RSATE.FromString16(Memo1.Text.Replace(sLineBreak, ''));
+            1: RSATE.FromString10(Memo1.Text.Replace(sLineBreak, ''));
+            2: RSATE.FromBytes(WideBytesof(Memo1.Text));
+          else
+            Exit;
+          end;
+          if RSATE.LessThan(RSAN) and not RSAD.IsZero then
+          begin
+            RSATE.PowAndMod(RSAD, RSAN);
+            case ComboBox4.ItemIndex of
+              0: Memo1.Text := RSATE.ToString16;
+              1: Memo1.Text := RSATE.ToString10;
+              2:
+              begin
+                BS := RSATE.ToBytes;
+                if Length(BS) and 1 <> 0 then
+                begin
+                  SetLength(BS, Length(BS) + 1);
+                  BS[Length(BS) - 1] := 0;
+                end;
+                Memo1.Text := WideStringOf(BS);
+              end;
+            else
+              ErrorMessage := ErrorTextError.Text;
+              Exit;
+            end;
+          end
+          else
+          begin
+            ErrorMessage := ErrorTooLong.Text;
+            Exit;
+          end;
+        end
+      );
+      MyThread1.OnTerminate := EncodingThreadOnTerminate;
+      MyThread1.Start;
+    end;
+    1: // Ëß£ÂØÜÊñá‰ª∂
+    begin
+      MyThread1 := TThread.CreateAnonymousThread(
+        procedure
+        var
+          FS, FD: string;
+          BS, BD: TBytes;
+          LS, LD, i, l: Integer;
+          MS, MD: TMemoryStream;
+        begin
+          FS := Edit1.Text;
+          FD := Edit2.Text;
+          if (not FileExists(FS)) or (FD = '') then
+          begin
+            Exit;
+          end;
+          LS := (RSAN.Digit + 7) div 8;
+          LD := (RSAN.Digit - 1) div 8;
+          MS := TMemoryStream.Create;
+          MD := TMemoryStream.Create;
+          try
+            MS.LoadFromFile(FS);
+            MS.Position := 0;
+            while MS.Position + LS < MS.Size do
+            begin
+              SetLength(BS, LS);
+              MS.ReadBuffer(BS,LS);
+              RSATE.FromBytes(BS);
+              RSATE.PowAndMod(RSAD, RSAN);
+              BD := RSATE.ToBytes;
+              l := Length(BD);
+              if l > LD then
+              begin
+                ErrorMessage := ErrorFileError.Text;
+                Exit;
+              end;
+              SetLength(BD, LD);
+              for i := l to LD - 1 do
+              begin
+                BD[i] := 0;
+              end;
+              MD.WriteBuffer(BD, LD);
+            end;
+            if MS.Position < MS.Size then
+            begin
+              SetLength(BS, MS.Size - MS.Position);
+              MS.ReadBuffer(BS, Length(BS));
+              RSATE.FromBytes(BS);
+              RSATE.PowAndMod(RSAD, RSAN);
+              BD := RSATE.ToBytes;
+              l := Length(BD);
+              if l > LD then
+              begin
+                ErrorMessage := ErrorFileError.Text;
+                Exit;
+              end;
+              MD.WriteBuffer(BD, l);
+            end;
+            MD.SaveToFile(FD);
+          finally
+            FreeAndNil(MS);
+            FreeAndNil(MD);
+          end;
+        end
+      );
+      MyThread1.OnTerminate := EncodingThreadOnTerminate;
+      MyThread1.Start;
     end;
   end;
 end;
@@ -369,9 +569,9 @@ begin
       EditE.Text := RSAE.ToString16;
       EditD.Text := RSAD.ToString16;
       EditN.Text := RSAN.ToString16;
-      Label8.Text := Format('°∏%d°π', [RSAE.Digit]);
-      Label9.Text := Format('°∏%d°π', [RSAD.Digit]);
-      Label4.Text := Format('°∏%d°π', [RSAN.Digit]);
+      Label8.Text := Format('„Äå%d„Äç', [RSAE.Digit]);
+      Label9.Text := Format('„Äå%d„Äç', [RSAD.Digit]);
+      Label4.Text := Format('„Äå%d„Äç', [RSAN.Digit]);
     end;
   finally
     FreeAndNil(Texts);
@@ -419,6 +619,30 @@ begin
   end;
 end;
 
+procedure TRSATest.EllipsesEditButton1Click(Sender: TObject);
+begin
+  if OpenDialog.Execute then
+  begin
+    Edit1.Text := OpenDialog.FileName;
+  end
+  else
+  begin
+    Exit;
+  end;
+end;
+
+procedure TRSATest.EllipsesEditButton2Click(Sender: TObject);
+begin
+  if SaveDialog.Execute then
+  begin
+    Edit2.Text := SaveDialog.FileName;
+  end
+  else
+  begin
+    Exit;
+  end;
+end;
+
 procedure TRSATest.FormClose(Sender: TObject; var Action: TCloseAction);
 var
   i: Integer;
@@ -449,6 +673,9 @@ begin
   RSAN := TLongInteger.Create;
   RSATE := TLongInteger.Create;
   PrimeL := PrimeNumbersGenerate(32);
+  ErrorTooLong.Visible := False;
+  ErrorFileError.Visible := False;
+  ErrorTextError.Visible := False;
   ID := GetSystemDefaultLangID;
   case ID of
     $1404, $0404, $0C04: 
@@ -477,12 +704,23 @@ begin
     EditE.Text := RSAE.ToString16;
     EditD.Text := RSAD.ToString16;
     EditN.Text := RSAN.ToString16;
-    Label8.Text := Format('°∏%d°π', [RSAE.Digit]);
-    Label9.Text := Format('°∏%d°π', [RSAD.Digit]);
-    Label4.Text := Format('°∏%d°π', [RSAN.Digit]);
+    Label8.Text := Format('„Äå%d„Äç', [RSAE.Digit]);
+    Label9.Text := Format('„Äå%d„Äç', [RSAD.Digit]);
+    Label4.Text := Format('„Äå%d„Äç', [RSAN.Digit]);
     AniIndicator.Enabled := False;
     AniIndicator.Visible := False;
     Back.Enabled := True;
+  end;
+end;
+
+procedure TRSATest.EncodingThreadOnTerminate(Sender: TObject);
+begin
+  AniIndicator.Enabled := False;
+  AniIndicator.Visible := False;
+  Back.Enabled := True;
+  if ErrorMessage <> '' then
+  begin
+    ShowMessage(ErrorMessage);
   end;
 end;
 

@@ -4,7 +4,7 @@
 {                                                       }
 {                    RdeEM Prime                        }
 {                     素数单元                          }
-{                     ver 1.22                          }
+{                     ver 1.23                          }
 {                                                       }
 {    Copyright(c) 2018-2019 Reniasty de El Magnifico    }
 {                   天道玄虚 出品                       }
@@ -663,6 +663,10 @@ begin
     while not IsCoPrime(E, L) do
     begin
       E.Add(LIOne);
+    end;
+    if D <> nil then
+    begin
+      FreeAndNil(D);
     end;
     D := IntegerInverse(E, L);
   finally

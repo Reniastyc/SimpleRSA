@@ -290,9 +290,9 @@
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_MinorVer>22</VerInfo_MinorVer>
+        <VerInfo_MinorVer>23</VerInfo_MinorVer>
         <VerInfo_Locale>2052</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=天道玄虛;FileDescription=$(MSBuildProjectName);FileVersion=1.22.0.0;InternalName=RSAProject;LegalCopyright=Reniastyc de El Magnifico;LegalTrademarks=Reniastyc de El Magnifico;OriginalFilename=RSAProject;ProgramID=RdeEM.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=天道玄虛;FileDescription=$(MSBuildProjectName);FileVersion=1.23.0.0;InternalName=RSAProject;LegalCopyright=Reniastyc de El Magnifico;LegalTrademarks=Reniastyc de El Magnifico;OriginalFilename=RSAProject;ProgramID=RdeEM.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
         <Icon_MainIcon>Icon.ico</Icon_MainIcon>
         <UWP_DelphiLogo44>Logo.png</UWP_DelphiLogo44>
