@@ -461,7 +461,7 @@ object RSATest: TRSATest
       Size.Width = 1200.000000000000000000
       Size.Height = 205.000000000000000000
       Size.PlatformDefault = False
-      TabIndex = 0
+      TabIndex = 1
       TabOrder = 0
       TabPosition = PlatformDefault
       Sizes = (
@@ -473,7 +473,7 @@ object RSATest: TRSATest
         CustomIcon = <
           item
           end>
-        IsSelected = True
+        IsSelected = False
         Size.Width = 124.000000000000000000
         Size.Height = 30.000000000000000000
         Size.PlatformDefault = False
@@ -636,7 +636,7 @@ object RSATest: TRSATest
         CustomIcon = <
           item
           end>
-        IsSelected = False
+        IsSelected = True
         Size.Width = 116.000000000000000000
         Size.Height = 30.000000000000000000
         Size.PlatformDefault = False
@@ -52919,13 +52919,11 @@ object RSATest: TRSATest
   end
   object OpenDialog: TOpenDialog
     DefaultExt = 'txt'
-    Filter = #25991#26412#25991#26723#65288'*.TXT'#65289'|*.TXT'
     Left = 424
     Top = 232
   end
   object SaveDialog: TSaveDialog
     DefaultExt = 'txt'
-    Filter = #25991#26412#25991#26723#65288'*.TXT'#65289'|*.TXT'
     Left = 424
     Top = 280
   end

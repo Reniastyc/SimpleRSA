@@ -149,6 +149,7 @@ var
   FileName: string;
   Texts: TStringList;
 begin
+  OpenDialog.Filter := '（*.TXT）|*.TXT';
   if OpenDialog.Execute then
   begin
     FileName := OpenDialog.FileName;
@@ -179,6 +180,7 @@ var
   FileName: string;
   Texts: TStringList;
 begin
+  SaveDialog.Filter := '（*.TXT）|*.TXT';
   if SaveDialog.Execute then
   begin
     FileName := SaveDialog.FileName;
@@ -203,6 +205,7 @@ var
   FileName: string;
   Texts: TStringList;
 begin
+  OpenDialog.Filter := '（*.TXT）|*.TXT';
   if OpenDialog.Execute then
   begin
     FileName := OpenDialog.FileName;
@@ -328,6 +331,7 @@ begin
       MyThread1 := TThread.CreateAnonymousThread(
         procedure
         var
+          B: Byte;
           FS, FD: string;
           BS, BD: TBytes;
           LS, LD, i, l: Integer;
@@ -345,6 +349,9 @@ begin
           MD := TMemoryStream.Create;
           try
             MS.LoadFromFile(FS);
+            B := 255;
+            MS.Position := MS.Size;
+            MS.Write(B, SizeOf(Byte));
             MS.Position := 0;
             while MS.Position + LS < MS.Size do
             begin
@@ -506,7 +513,11 @@ begin
                 ErrorMessage := ErrorFileError.Text;
                 Exit;
               end;
-              MD.WriteBuffer(BD, l);
+              if BD[l - 1] = 255 then
+              begin
+                SetLength(BD, l - 1);
+              end;
+              MD.WriteBuffer(BD, l - 1);
             end;
             MD.SaveToFile(FD);
           finally
@@ -526,6 +537,7 @@ var
   FileName: string;
   Texts: TStringList;
 begin
+  SaveDialog.Filter := '（*.TXT）|*.TXT';
   if SaveDialog.Execute then
   begin
     FileName := SaveDialog.FileName;
@@ -550,6 +562,7 @@ var
   FileName: string;
   Texts: TStringList;
 begin
+  OpenDialog.Filter := '（*.TXT）|*.TXT';
   if OpenDialog.Execute then
   begin
     FileName := OpenDialog.FileName;
@@ -583,6 +596,7 @@ var
   FileName: string;
   Texts: TStringList;
 begin
+  SaveDialog.Filter := '（*.TXT）|*.TXT';
   if SaveDialog.Execute then
   begin
     FileName := SaveDialog.FileName;
@@ -621,6 +635,7 @@ end;
 
 procedure TRSATest.EllipsesEditButton1Click(Sender: TObject);
 begin
+  OpenDialog.Filter := '（*.*）|*.*';
   if OpenDialog.Execute then
   begin
     Edit1.Text := OpenDialog.FileName;
@@ -633,6 +648,7 @@ end;
 
 procedure TRSATest.EllipsesEditButton2Click(Sender: TObject);
 begin
+  SaveDialog.Filter := '（*.*）|*.*';
   if SaveDialog.Execute then
   begin
     Edit2.Text := SaveDialog.FileName;
